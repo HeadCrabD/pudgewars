@@ -1,5 +1,6 @@
 tHookElements = tHookElements or {}
 
+
 tHookLastPos = nil
 tnHookDamage = {175 , 250 , 350 , 500  }
 tnHookLength = {500 , 700 , 900 , 1200 }
@@ -120,6 +121,10 @@ function OnHookChanneling(keys)
 
 		--TODO think about earth shaker's totem
 		local vHeadMoveTarget = Vector(vHeadOrigin.x + 200 * vDirection.x , vHeadOrigin.y + 200 * vDirection.y , vHeadOrigin.z)
+
+              -- Begin to rewrite hook
+              --better sleep first
+              -- Todo 2014 06 27 00 49
 
 		--order the head to move
 		local moveOrder = {
