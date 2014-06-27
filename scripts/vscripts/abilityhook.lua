@@ -27,6 +27,13 @@ tnHookTypeString = {
 	[3] = "npc_dota2x_pudgewars_unit_pudgehook_lv3",
 	[4] = "npc_dota2x_pudgewars_unit_pudgehook_lv4"
 }
+tPossibleHookTargetName = {
+	 "npc_dota2x_pudgewars_pudge"
+	,"npc_dota2x_pudgewars_chest"
+	,"npc_dota2x_pudgewars_gold"
+	--,"npc_dota2x_pudgewars_rune" TODO
+
+}
 
 local function distance(a, b)
     -- Pythagorian distance
@@ -68,16 +75,17 @@ function OnHookStart(keys)
 		print("fail to create the head")
 	else
 		tHookElements[nPlayerID].Head = unit
+		unit:SetForwardVector(caster:GetForwardVector())
 	end
 end
 
 function OnHookChanneling(keys)
-	--PrintTable(keys)
-	--called interval = 0.03
+
+
 	local caster = EntIndexToHScript(keys.caster_entindex)
 	local casterOrigin = caster:GetOrigin()
 	local nPlayerID = caster:GetPlayerID()
-	--print("playerID "..tostring(nPlayerID))
+	
 	local uHead = tHookElements[nPlayerID].Head
 
 	local tuHookedUnits = FindUnitsInRadius(
@@ -89,6 +97,7 @@ function OnHookChanneling(keys)
 		0, FIND_CLOSEST,
 		false
 	)
+	--[[
 	--print("********* TRYING TO CATCH UNIT *** *********")
 	--PrintTable(tuHookedUnits)
 	--print("********************************************")
@@ -99,12 +108,20 @@ function OnHookChanneling(keys)
 	-- if find any unit then think about it
 	if #tuHookedUnits >= 1 then
 		for k,v in pairs(tuHookedUnits) do
-			if v == caster or v:GetName() == "npc_dota2x_pudgewars_unit_pudgehook_body" then
-				tuHookedUnits[k] = nil
-			else
-				tHookElements[nPlayerID].Target = v
+			local va = false
+			for s,t in pairs (tPossibleHookTargetName) do
+				if v:GetName == t then
+					va = true
+				end
+			end
+			if not va then
+				table.remove(tuHookedUnits , k)
 			end
 		end
+	end
+	
+	if #tuHookedUnits >= 1 then
+		tHookElements[nPlayerID].Target = tuHookedUnits[1]
 	end
 
 
@@ -149,7 +166,7 @@ function OnHookChanneling(keys)
 		if tnHookMovedDistance[nPlayerID] >= tnPlayerHookLength[nPlayerID] then
 			tbHookedNothing[nPlayerID] = true
 		end
-		]]
+		
 
 		if #tHookElements[nPlayerID].Body == 0 then
 			latestedCreateBody[nPlayerID] = caster
