@@ -68,7 +68,7 @@ function OnHookStart(keys)
 
 	PrintTable(keys)
 	local caster = EntIndexToHScript(keys.caster_entindex)
-	local vOrifin = caster:GetOrigin
+	local vOrigin = caster:GetOrigin()
 	local vForwardVector = caster:GetForwardVector()
 	PrintTable(vForwardVector)
 	local nPlayerID = keys.unit:GetPlayerID()
@@ -85,9 +85,9 @@ function OnHookStart(keys)
 	-- defined by units killed by the caster
 	
 	local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
-	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin())
+	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin)
 	tHookElements[nPlayerID].Body[1] = nFXIndex
-	tHookElements[nPlayerID].Body[1].vec = vOrigin()
+	tHookElements[nPlayerID].Body[1].vec = vOrigin
 end
 
 -- get the hooked unit
