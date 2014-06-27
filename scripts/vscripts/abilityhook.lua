@@ -66,6 +66,7 @@ print("[pudgewars] finish init hook data")
 
 function OnHookStart(keys)
 
+	-- a player starts a hook
 	PrintTable(keys)
 	local caster = EntIndexToHScript(keys.caster_entindex)
 	local vOrigin = caster:GetOrigin()
@@ -73,12 +74,16 @@ function OnHookStart(keys)
 	PrintTable(vForwardVector)
 	local nPlayerID = keys.unit:GetPlayerID()
 	print("player "..tostring(nPlayerID).." Start a hook")
+	
+	-- create the hook head
 	local unit = CreateUnitByName("npc_dota2x_pudgewars_unit_pudgehook_lv1",caster:GetOrigin(),false,nil,nil,caster:GetTeam())
 	if unit == nil then 
 		print("fail to create the head")
 	else
 		tHookElements[nPlayerID].Head = unit
 		unit:SetForwardVector(vForwardVector)
+		-- TODO change the model scale to the correct hook radiu
+		--unit:SetModelScele(40 / tnPlayerHookRadius[nPlayerID] , -1 )
 	end
 	
 	-- TODO replace "veil of discord" with correct particle， or even a table of effect 
@@ -95,6 +100,7 @@ end
 -- get the hooked unit
 local function GetHookedUnit(caster, head , plyid)
 		
+	-- find unit in radius within hook radius	
 	local tuHookedUnits = FindUnitsInRadius(
 		caster:GetTeam(),		--caster team
 		head:GetOrigin(),		--find position
@@ -161,8 +167,11 @@ function OnHookChanneling(keys)
 	
 	if tHookElements[nPlayerID].CurrentLength == nil then
 		tHookElements[nPlayerID].CurrentLength = 2
+	else
+		tHookElements[nPlayerID].CurrentLength = tHookElements[nPlayerID].CurrentLength + 1
 	end
 	
+	-- if not hook anything and not reach the max length continue to longer the hook
 	if not tHookElements[nPlayerID].Target and 
 		tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] 
 			< tnPlayerHookLength[nPlayerID]
@@ -171,35 +180,43 @@ function OnHookChanneling(keys)
 			tPudgeLastForwardVec[nPlayerID] = casterForwardVector
 		end
 		
+		-- get the changed angle of pudge
 		local aChangedFV = math.atan2(casterForwardVector.y , casterForwardVector.x) 
 			- math.atan2(tPudgeLastForwardVec[nPlayerID].y , tPudgeLastForwardVec[nPlayerID].x)
 		local aChangedFV = aChangedFV / 10
 		local x = (math.cos(aChangedFV)) * 1
 		local y = (math.sin(aChangedFV)) * 1
 		local base = uHead:GetOrigin()
-		local vec = Vector(base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z )
+		local vec3 = Vector(base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z )
 
-		--TODO replace "veil of discord" with correct particle，or even a table of effect 
-		--defined by units killed by the caster
+		-- TODO replace "veil of discord" with correct particle， or even a table of effect 
+		-- defined by units killed by the caster
+		-- create next hook body
 		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
 		ParticleManager:SetParticleControl( nFXIndex, 0, vec)
 		tHookElements[nPlayerID].Body[#tHookElements[nPlayerID] + 1] = {
 		    index = nFXIndex,
-		    vec = vec
+		    vec = vec3
 		}
 		
+		-- move the head
 		uHead:SetOrigin(vec)
 		uHead:SetForwardVector(x,y,base.z)
 		
 		tPudgeLastForwardVec[nPlayerID] = casterForwardVector
 	end
-	--[[local hooked = nil
+	-- if hoooked someone then hook it
+	--[[
+	local hooked = nil
 	if tHookElements[nPlayerID].Target then
 		local unit = tHookElements[nPlayerID].Target
 		while hooked == nil do
 			hooked = HookUnit( unit , uHead )
 		end
-	end]]
+	end
+	]]
+
+	--if hooked something or hook reaches the max length then begin to go back
 	if (tHookElements[nPlayerID].Target and hooked ) or  
 		(tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] > tnPlayerHookLength[nPlayerID])
 		then
@@ -210,9 +227,9 @@ function OnHookChanneling(keys)
 		ParticleManager:ReleaseParticleIndex( paIndex )
 		uHead:SetOrigin(backVec)
 		
-		table.remove(HookElements[nPlayerID].Body,#HookElements[nPlayerID].Body)
+		table.remove(tHookElements[nPlayerID].Body,#HookElements[nPlayerID].Body)
 		
-		if #HookElements[nPlayerID].Body == 0 then
+		if #tHookElements[nPlayerID].Body == 0 then
 			if tHookElements[nPlayerID].Target:IsAlive() then
 				tHookElements[nPlayerID].Target:RemoveModifierByName( "dota2x_modifier_hooked" )
 			end
