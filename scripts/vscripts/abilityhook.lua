@@ -14,12 +14,12 @@ tnPlayerHookDamage  = {}
 tnPlayerHookLength  = {}
 tnPlayerHookRadius  = {}
 tnPlayerHookSpeed   = {}
-latestedCreateBody  = {}
+
+tPudgeLastForwardVec = {}
 tnPlayerHookType    = {}
-tnHookMovedDistance = {}
-tHookLastPos        = {}
-tHookCurrentPos     = {}
 tbHookedNothing     = {}
+
+PER_HOOK_BODY_LENGTH = 50
 
 tnHookTypeString = {
 	[1] = "npc_dota2x_pudgewars_unit_pudgehook_lv1",
@@ -66,8 +66,9 @@ function OnHookStart(keys)
 
 	PrintTable(keys)
 	local caster = EntIndexToHScript(keys.caster_entindex)
-	local vDirection = caster:GetAngles()
-	PrintTable(vDirection)
+	local vOrifin = caster:GetOrigin
+	local vForwardVector = caster:GetForwardVector()
+	PrintTable(vForwardVector)
 	local nPlayerID = keys.unit:GetPlayerID()
 	print("player "..tostring(nPlayerID).." Start a hook")
 	local unit = CreateUnitByName("npc_dota2x_pudgewars_unit_pudgehook_lv1",caster:GetOrigin(),false,nil,nil,caster:GetTeam())
@@ -75,8 +76,12 @@ function OnHookStart(keys)
 		print("fail to create the head")
 	else
 		tHookElements[nPlayerID].Head = unit
-		unit:SetForwardVector(caster:GetForwardVector())
+		unit:SetForwardVector(vForwardVector)
 	end
+	
+	local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
+	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin())
+	tHookElements[nPlayerID].Body[1] = nFXIndex
 end
 
 function OnHookChanneling(keys)
@@ -84,6 +89,7 @@ function OnHookChanneling(keys)
 
 	local caster = EntIndexToHScript(keys.caster_entindex)
 	local casterOrigin = caster:GetOrigin()
+	local casterForwardVector = caster:GetFowardVecotr()
 	local nPlayerID = caster:GetPlayerID()
 	
 	local uHead = tHookElements[nPlayerID].Head
@@ -97,6 +103,48 @@ function OnHookChanneling(keys)
 		0, FIND_CLOSEST,
 		false
 	)
+	if #tuHookedUnits >= 1 then
+		for k,v in pairs(tuHookedUnits) do
+			local va = false
+			for s,t in pairs (tPossibleHookTargetName) do
+				if v:GetName == t then
+					va = true
+				end
+			end
+			if not va then
+				table.remove(tuHookedUnits , k)
+			end
+		end
+	end
+
+	if #tuHookedUnits >= 1 then
+		tHookElements[nPlayerID].Target = tuHookedUnits[1]
+	else
+		tHookElements[nPlayerID].Target = nil
+	end
+	if tHookElements[nPlayerID].CurrentLength == nil then
+		tHookElements[nPlayerID].CurrentLength = 2
+	end
+	
+	if tHookElements[nPlayerID].Target and 
+		tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH < tnPlayerHookLength[nPlayerID]
+		then
+		if tPudgeLastForwardVec[nPlayerID] == nil then
+			tPudgeLastForwardVec[nPlayerID] = casterForwardVector
+		end
+		local aChangedFV = math.acos(casterForwardVector.x) - math.acos((tPudgeLastForwardVec[nPlayerID].x)
+		local aChangedFV = aChangedFV / 10
+		local x = (math.sin(aChangedFV))
+		local y = (math.cos(aChangedFV))
+		local base = uHead:GetOrigin()
+		local vec = (base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z )
+		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
+		articleManager:SetParticleControl( nFXIndex, 0, vec)
+		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength] = nFXIndex
+		
+		uHead:SetOrigin(vec)
+		uHead:SetForwardVector(x,y,base.z)
+	end
 	--[[
 	--print("********* TRYING TO CATCH UNIT *** *********")
 	--PrintTable(tuHookedUnits)
