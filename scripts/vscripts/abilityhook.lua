@@ -126,15 +126,20 @@ local function GetHookedUnit(caster, head , plyid)
 end
 
 local function HookUnit( unit , caster )
-	print ( "hooking enemt" )
+	print ( "hooking enemy" )
 	caster:SetOrigin(unit:GetOrigin())
 	ABILITY_HOOK = caster:FindAbilityByName( "dota2x_pudgewars_hook" )
-	ExecuteOrderFromTable({
-		UnitIndex = caster:entindex(),
-		OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
-		AbilityIndex = ABILITY_HOOK:entindex(),
-		TargetIndex = unit:entindex()
-	})
+	if ABILITY_HOOK ~= nil then
+		if ABILITY_HOOK:GetLevel() ~= 1 then
+			ABILITY_HOOK:SetLevel(1)
+		end
+		ExecuteOrderFromTable({
+			UnitIndex = caster:entindex(),
+			OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
+			AbilityIndex = ABILITY_HOOK:entindex(),
+			TargetIndex = unit:entindex()
+		})
+	end
 	if unit:HasModifier(" dota2x_modifier_hooked ")
 		return 1
 	else
@@ -444,11 +449,14 @@ function OnUpgradeHookDamageFinished( keys )
 	local nCurrentLevel = hHookAbility:GetLevel()
 	local nUpgradeCost  = tnUpgradeHookDamageCost[nCurrentLevel]
 	
-	-- upgrade the hook data and spend gold
-	hHookAbility:SetLevel( nCurrentLevel + 1 )
-	PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
-	tnPlayerHookDamage[ nPlayerID ] =  tnHookDamage[ nCurrentLevel + 1 ]
-
+	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
+		Say(caster:GetOwner(),"#Upgrading_hook_damage_fail_to_spend_gold",caster:GetTeam())
+	else
+		-- upgrade the hook data and spend gold
+		hHookAbility:SetLevel( nCurrentLevel + 1 )
+		PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
+		tnPlayerHookDamage[ nPlayerID ] =  tnHookDamage[ nCurrentLevel + 1 ]
+	end
 end
 
 function OnUpgradeHookRadiusFinished( keys )
@@ -464,10 +472,14 @@ function OnUpgradeHookRadiusFinished( keys )
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrade_hook_radius")
 	local nCurrentLevel = hHookAbility:GetLevel()
 	
-	-- upgrade the hook data and spend gold
-	hHookAbility:SetLevel( nCurrentLevel + 1 )
-	PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
-	tnPlayerHookRadius[ nPlayerID ] =  tnHookRadius[ nCurrentLevel + 1 ]
+	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
+		Say(caster:GetOwner(),"#Upgrading_hook_radius_fail_to_spend_gold",caster:GetTeam())
+	else
+		-- upgrade the hook data and spend gold
+		hHookAbility:SetLevel( nCurrentLevel + 1 )
+		PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
+		tnPlayerHookRadius[ nPlayerID ] =  tnHookRadius[ nCurrentLevel + 1 ]
+	end
 	
 end
 
@@ -484,10 +496,14 @@ function OnUpgradeHookLengthFinished( keys )
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrade_hook_length")
 	local nCurrentLevel = hHookAbility:GetLevel()
 	
-	-- upgrade the hook data and spend gold
-	hHookAbility:SetLevel( nCurrentLevel + 1 )
-	PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
-	tnPlayerHookLength[ nPlayerID ] =  tnHookLength[ nCurrentLevel + 1 ]
+	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
+		Say(caster:GetOwner(),"#Upgrading_hook_length_fail_to_spend_gold",caster:GetTeam())
+	else
+		-- upgrade the hook data and spend gold
+		hHookAbility:SetLevel( nCurrentLevel + 1 )
+		PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
+		tnPlayerHookLength[ nPlayerID ] =  tnHookLength[ nCurrentLevel + 1 ]
+	end
 	
 end
 
@@ -504,9 +520,14 @@ function OnUpgradeHookSpeedFinished( keys )
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrade_hook_speed")
 	local nCurrentLevel = hHookAbility:GetLevel()
 	
-	-- upgrade the hook data and spend gold
-	hHookAbility:SetLevel( nCurrentLevel + 1 )
-	PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
-	tnPlayerHookSpeed[ nPlayerID ] =  tnHookSpeed[ nCurrentLevel + 1 ]
+
+	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
+		Say(caster:GetOwner(),"#Upgrading_hook_speed_fail_to_spend_gold",caster:GetTeam())
+	else
+		-- upgrade the hook data and spend gold
+		hHookAbility:SetLevel( nCurrentLevel + 1 )
+		PlayerResource:SpendGold( nPlayerID , nUpgradeCost , 0 )
+		tnPlayerHookSpeed[ nPlayerID ] =  tnHookSpeed[ nCurrentLevel + 1 ]
+	end
 	
 end
