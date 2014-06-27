@@ -1,4 +1,5 @@
 tbPlayerFinishedHook = {}
+tbPlayerReachesMaxLength = {}
 
 tHookElements = tHookElements or {}
 
@@ -22,6 +23,7 @@ tnPlayerHookType    = {}
 tnPlayerHookBDType = {}
 tPlayerPudgeLastFV  = {}
 tnPlayerHookType    = {}
+
 
 tnPlayerKillStreak  = {}
 
@@ -93,6 +95,7 @@ function OnHookStart(keys)
 	local nPlayerID = keys.unit:GetPlayerID()
 
 	tbPlayerFinishedHook[nPlayerID] = false
+	tbPlayerReachesMaxLength[nPlayerID] = false
 
 	print("player "..tostring(nPlayerID).." Start a hook")
 	
@@ -222,7 +225,10 @@ function OnHookChanneling(keys)
 	
 	if not tbPlayerFinishedHook[nPlayerID] then
 		local uHead = tHookElements[nPlayerID].Head
-		if uHead ~= nil and tHookElements[nPlayerID].Target == nil then
+		if uHead ~= nil 
+			and tHookElements[nPlayerID].Target == nil 
+			and not tbPlayerReachesMaxLength[nPlayerID]
+			then
 			tHookElements[nPlayerID].Target = GetHookedUnit(caster , uHead , nPlayerID )
 		end
 		
@@ -329,6 +335,8 @@ function OnHookChanneling(keys)
 			(tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] 
 				> tnPlayerHookLength[nPlayerID])
 			then
+
+			tbPlayerReachesMaxLength[nPlayerID] = true
 
 			local backVec = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].vec
 			local paIndex = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].index
