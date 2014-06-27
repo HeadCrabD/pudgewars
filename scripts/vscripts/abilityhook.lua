@@ -536,4 +536,3 @@ function OnUpgradeHookSpeedFinished( keys )
 	end
 	
 end
-
