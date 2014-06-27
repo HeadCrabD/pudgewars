@@ -83,22 +83,13 @@ function OnHookStart(keys)
 	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin())
 	tHookElements[nPlayerID].Body[1] = nFXIndex
 end
-
-function OnHookChanneling(keys)
-
-
-	local caster = EntIndexToHScript(keys.caster_entindex)
-	local casterOrigin = caster:GetOrigin()
-	local casterForwardVector = caster:GetFowardVecotr()
-	local nPlayerID = caster:GetPlayerID()
+local function GetHookedUnit(caster, head , plyid)
 	
-	local uHead = tHookElements[nPlayerID].Head
-
 	local tuHookedUnits = FindUnitsInRadius(
 		caster:GetTeam(),		--caster team
-		uHead:GetOrigin(),		--find position
+		head:GetOrigin(),		--find position
 		nil,					--find entity
-		tnPlayerHookRadius[nPlayerID],			--find radius
+		tnPlayerHookRadius[plyid],			--find radius
 		DOTA_UNIT_TARGET_TEAM_BOTH, DOTA_UNIT_TARGET_HERO + DOTA_UNIT_TARGET_BASIC + DOTA_UNIT_TARGET_OTHER, 
 		0, FIND_CLOSEST,
 		false
@@ -107,7 +98,7 @@ function OnHookChanneling(keys)
 		for k,v in pairs(tuHookedUnits) do
 			local va = false
 			for s,t in pairs (tPossibleHookTargetName) do
-				if v:GetName == t then
+				if v:GetName() == t then
 					va = true
 				end
 			end
@@ -116,12 +107,22 @@ function OnHookChanneling(keys)
 			end
 		end
 	end
-
+	
 	if #tuHookedUnits >= 1 then
-		tHookElements[nPlayerID].Target = tuHookedUnits[1]
-	else
-		tHookElements[nPlayerID].Target = nil
+		return tuHookedUnits[1]
 	end
+	return nil
+end
+function OnHookChanneling(keys)
+
+
+	local caster = EntIndexToHScript(keys.caster_entindex)
+	local casterOrigin = caster:GetOrigin()
+	local casterForwardVector = caster:GetFowardVecotr()
+	local nPlayerID = caster:GetPlayerID()
+	local uHead = tHookElements[nPlayerID].Head
+	tHookElements[nPlayerID].Target = GetHookUnit(caster , uHead , nPlayerID )
+	
 	if tHookElements[nPlayerID].CurrentLength == nil then
 		tHookElements[nPlayerID].CurrentLength = 2
 	end
@@ -132,6 +133,7 @@ function OnHookChanneling(keys)
 		if tPudgeLastForwardVec[nPlayerID] == nil then
 			tPudgeLastForwardVec[nPlayerID] = casterForwardVector
 		end
+		
 		local aChangedFV = math.acos(casterForwardVector.x) - math.acos((tPudgeLastForwardVec[nPlayerID].x)
 		local aChangedFV = aChangedFV / 10
 		local x = (math.sin(aChangedFV))
@@ -144,6 +146,8 @@ function OnHookChanneling(keys)
 		
 		uHead:SetOrigin(vec)
 		uHead:SetForwardVector(x,y,base.z)
+		
+		tPudgeLastForwardVec[nPlayerID] = casterForwardVector
 	end
 	--[[
 	--print("********* TRYING TO CATCH UNIT *** *********")
