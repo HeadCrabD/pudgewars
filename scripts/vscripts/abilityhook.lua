@@ -136,8 +136,8 @@ function OnHookChanneling(keys)
 		
 		local aChangedFV = math.acos(casterForwardVector.x) - math.acos((tPudgeLastForwardVec[nPlayerID].x)
 		local aChangedFV = aChangedFV / 10
-		local x = (math.sin(aChangedFV))
-		local y = (math.cos(aChangedFV))
+		local x = (math.sin(aChangedFV)) * 1
+		local y = (math.cos(aChangedFV)) * 1
 		local base = uHead:GetOrigin()
 		local vec = (base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z )
 		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
