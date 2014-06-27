@@ -122,18 +122,22 @@ function PudgeWarsGameMode:InitGoldAndChestTimer( ... )
             continousTimer = true,
             callback = function(pudgewars, args)
                 print("[PudgeWars] Spawning Gold")
-                local vGoldSpawnPos = self.eGoldSpawner:GetOrigin()
-                local vGoldMoveTarget = self.eChestSpawner:GetOrigin()
-                local unit = CreateUnitByName("npc_dota2x_pudgewars_gold",vGoldSpawnPos,true,nil,DOTA_TEAM_NEUTRALS)
-                table.insert( self.tuGold , #self.tuGold +1 , unit )
-                local uIndex = unit.entindex()
-                local moveOrder = {
-                    UnitIndex = uIndex,
-                    OrderType = DOTA_UNIT_ORDER_MOVE_TO_POSITION,
-                    Position = vGoldMoveTarget,
-                    Queue = false
-                }
-                ExecuteOrderFromTable(moveOrder)
+                if self.eGoldSpawner and self.eChestSpawner then
+                    local vGoldSpawnPos = self.eGoldSpawner:GetOrigin()
+                    local vGoldMoveTarget = self.eChestSpawner:GetOrigin()
+                    local unit = CreateUnitByName("npc_dota2x_pudgewars_gold",vGoldSpawnPos,true,nil,DOTA_TEAM_NEUTRALS)
+                    table.insert( self.tuGold , #self.tuGold +1 , unit )
+                    local uIndex = unit.entindex()
+                    local moveOrder = {
+                        UnitIndex = uIndex,
+                        OrderType = DOTA_UNIT_ORDER_MOVE_TO_POSITION,
+                        Position = vGoldMoveTarget,
+                        Queue = false
+                    }
+                    ExecuteOrderFromTable(moveOrder)
+                else
+                    print('err gold spawner or chest spawner not found on the map')
+                end
             end
         })
     end
@@ -144,18 +148,22 @@ function PudgeWarsGameMode:InitGoldAndChestTimer( ... )
             continousTimer = true,
             callback = function(pudgewars, args)
                 print("[PudgeWars] Spawning Chest")
-                local vChestSpawnPos = self.eChestSpawner:GetOrigin()
-                local vChestMoveTarget = self.eGoldSpawner:GetOrigin()
-                local unit = CreateUnitByName("npc_dota2x_pudgewars_chest",vChestSpawnPos,true,nil,DOTA_TEAM_NEUTRALS)
-                table.insert( self.tuChest , #self.tuChest +1 , unit )
-                local uIndex = unit.entindex()
-                local moveOrder = {
-                    UnitIndex = uIndex,
-                    OrderType = DOTA_UNIT_ORDER_MOVE_TO_POSITION,
-                    Position = vChestMoveTarget,
-                    Queue = false
-                }
-                ExecuteOrderFromTable(moveOrder)
+                if self.eGoldSpawner and self.eChestSpawner then
+                    local vChestSpawnPos = self.eChestSpawner:GetOrigin()
+                    local vChestMoveTarget = self.eGoldSpawner:GetOrigin()
+                    local unit = CreateUnitByName("npc_dota2x_pudgewars_chest",vChestSpawnPos,true,nil,DOTA_TEAM_NEUTRALS)
+                    table.insert( self.tuChest , #self.tuChest +1 , unit )
+                    local uIndex = unit.entindex()
+                    local moveOrder = {
+                        UnitIndex = uIndex,
+                        OrderType = DOTA_UNIT_ORDER_MOVE_TO_POSITION,
+                        Position = vChestMoveTarget,
+                        Queue = false
+                    }
+                    ExecuteOrderFromTable(moveOrder)
+                else
+                    print('err gold spawner or chest spawner not found on the map')
+                end
             end
         })
     end
