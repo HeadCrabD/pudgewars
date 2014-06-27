@@ -47,17 +47,17 @@ for i = 0,9 do
 	tHookElements[i] = {
 		Head = nil,
 		Target = nil,
+		CurrentLength = nil,
 		Body = {}
 	}
 	tnPlayerHookType[i] = {tnHookTypeString[1]}
 	tnPlayerHookRadius[i] = 20
 	tnPlayerHookLength[i] = 500
 	tnPlayerHookSpeed[i] = 0.3
-	tnHookMovedDistance[i] = 0
 
-	tHookLastPos[i] = nil
-	tHookCurrentPos[i] = nil
-	tbHookedNothing[i] = false
+	--tHookLastPos[i] = nil
+	--tHookCurrentPos[i] = nil
+	--tbHookedNothing[i] = false
 end
 
 print("[pudgewars] finish init hook data")
@@ -65,7 +65,7 @@ print("[pudgewars] finish init hook data")
 
 
 function OnHookStart(keys)
-	-- a player starts a hook
+
 	PrintTable(keys)
 	local caster = EntIndexToHScript(keys.caster_entindex)
 	local vOrigin = caster:GetOrigin()
@@ -73,31 +73,28 @@ function OnHookStart(keys)
 	PrintTable(vForwardVector)
 	local nPlayerID = keys.unit:GetPlayerID()
 	print("player "..tostring(nPlayerID).." Start a hook")
-	-- create the hook head
 	local unit = CreateUnitByName("npc_dota2x_pudgewars_unit_pudgehook_lv1",caster:GetOrigin(),false,nil,nil,caster:GetTeam())
 	if unit == nil then 
 		print("fail to create the head")
 	else
 		tHookElements[nPlayerID].Head = unit
 		unit:SetForwardVector(vForwardVector)
-		-- TODO change the model scale to the correct hook radiu
-		--unit:SetModelScele(40 / tnPlayerHookRadius[nPlayerID] , -1 )
 	end
 	
 	-- TODO replace "veil of discord" with correct particle， or even a table of effect 
 	-- defined by units killed by the caster
-	-- create the first hook body
+	
 	local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
 	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin)
 	tHookElements[nPlayerID].Body[1] = {
-		index = nFXIndex,
-		vec = vOrigin
+	    index = nFXIndex,
+	    vec = vOrigin
 	}
 end
 
 -- get the hooked unit
 local function GetHookedUnit(caster, head , plyid)
-	-- find unit in radius within hook radius	
+		
 	local tuHookedUnits = FindUnitsInRadius(
 		caster:GetTeam(),		--caster team
 		head:GetOrigin(),		--find position
@@ -145,7 +142,7 @@ local function HookUnit( unit , caster )
 			TargetIndex = unit:entindex()
 		})
 	end
-	if unit:HasModifier(" dota2x_modifier_hooked ")
+	if unit:HasModifier(" dota2x_modifier_hooked ") then
 		return 1
 	else
 		return nil
@@ -157,19 +154,15 @@ function OnHookChanneling(keys)
 
 	local caster = EntIndexToHScript(keys.caster_entindex)
 	local casterOrigin = caster:GetOrigin()
-	local casterForwardVector = caster:GetFowardVecotr()
+	local casterForwardVector = caster:GetForwardVector()
 	local nPlayerID = caster:GetPlayerID()
 	local uHead = tHookElements[nPlayerID].Head
-	-- try to find anything to hook
 	tHookElements[nPlayerID].Target = GetHookedUnit(caster , uHead , nPlayerID )
 	
 	if tHookElements[nPlayerID].CurrentLength == nil then
 		tHookElements[nPlayerID].CurrentLength = 2
-	else
-		tHookElements[nPlayerID].CurrentLength = tHookElements[nPlayerID].CurrentLength + 1
 	end
 	
-	-- if not hook anything and not reach the max length continue to longer the hook
 	if not tHookElements[nPlayerID].Target and 
 		tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] 
 			< tnPlayerHookLength[nPlayerID]
@@ -178,44 +171,35 @@ function OnHookChanneling(keys)
 			tPudgeLastForwardVec[nPlayerID] = casterForwardVector
 		end
 		
-		-- get the changed angle of pudge
 		local aChangedFV = math.atan2(casterForwardVector.y , casterForwardVector.x) 
 			- math.atan2(tPudgeLastForwardVec[nPlayerID].y , tPudgeLastForwardVec[nPlayerID].x)
 		local aChangedFV = aChangedFV / 10
 		local x = (math.cos(aChangedFV)) * 1
 		local y = (math.sin(aChangedFV)) * 1
 		local base = uHead:GetOrigin()
-		
-		-- define the vector of next body element
-		local vec3 = {base.x + x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]  , base.y + y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] , base.z }
+		local vec = Vector(base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z )
 
-		-- TODO replace "veil of discord" with correct particle， or even a table of effect 
-		-- defined by units killed by the caster
-		-- create next hook body
+		--TODO replace "veil of discord" with correct particle，or even a table of effect 
+		--defined by units killed by the caster
 		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
-		articleManager:SetParticleControl( nFXIndex, 0, vec3)
-		HookElements[nPlayerID].Body[ #tnHookElements[nPlayerID] + 1 ] = {
-			index =  nFXIndex,
-			vec = vec3
+		ParticleManager:SetParticleControl( nFXIndex, 0, vec)
+		tHookElements[nPlayerID].Body[#tHookElements[nPlayerID] + 1] = {
+		    index = nFXIndex,
+		    vec = vec
 		}
 		
-		-- move the head
 		uHead:SetOrigin(vec)
 		uHead:SetForwardVector(x,y,base.z)
 		
 		tPudgeLastForwardVec[nPlayerID] = casterForwardVector
 	end
-	
-	-- if hoooked someone then hook it
-	local hooked = nil
+	--[[local hooked = nil
 	if tHookElements[nPlayerID].Target then
 		local unit = tHookElements[nPlayerID].Target
 		while hooked == nil do
 			hooked = HookUnit( unit , uHead )
 		end
-	end
-	
-	--if hooked something or hook reaches the max length then begin to go back
+	end]]
 	if (tHookElements[nPlayerID].Target and hooked ) or  
 		(tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] > tnPlayerHookLength[nPlayerID])
 		then
@@ -226,9 +210,9 @@ function OnHookChanneling(keys)
 		ParticleManager:ReleaseParticleIndex( paIndex )
 		uHead:SetOrigin(backVec)
 		
-		table.remove(tHookElements[nPlayerID].Body,#tHookElements[nPlayerID].Body)
+		table.remove(HookElements[nPlayerID].Body,#HookElements[nPlayerID].Body)
 		
-		if #tHookElements[nPlayerID].Body == 0 then
+		if #HookElements[nPlayerID].Body == 0 then
 			if tHookElements[nPlayerID].Target:IsAlive() then
 				tHookElements[nPlayerID].Target:RemoveModifierByName( "dota2x_modifier_hooked" )
 			end
@@ -552,3 +536,4 @@ function OnUpgradeHookSpeedFinished( keys )
 	end
 	
 end
+
