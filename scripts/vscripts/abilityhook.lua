@@ -161,7 +161,7 @@ function OnHookChanneling(keys)
 	local nPlayerID = caster:GetPlayerID()
 	local uHead = tHookElements[nPlayerID].Head
 	-- try to find anything to hook
-	tHookElements[nPlayerID].Target = GetHookUnit(caster , uHead , nPlayerID )
+	tHookElements[nPlayerID].Target = GetHookedUnit(caster , uHead , nPlayerID )
 	
 	if tHookElements[nPlayerID].CurrentLength == nil then
 		tHookElements[nPlayerID].CurrentLength = 2
