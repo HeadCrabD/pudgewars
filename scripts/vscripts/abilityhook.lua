@@ -9,11 +9,15 @@ tnUpgradeHookDamageCost = {500 , 1000 , 1500 , 2000  }
 tnUpgradeHookLengthCost = {500 , 1000 , 1500 , 2000  }
 tnUpgradeHookRadiusCost = {500 , 1000 , 1500 , 2000  }
 tnUpgradeHookSpeedCost  = {500 , 1000 , 1500 , 2000  }
-tnPlayerHookDamage  = {}
 
+tnPlayerHookDamage  = {}
 tnPlayerHookLength  = {}
 tnPlayerHookRadius  = {}
 tnPlayerHookSpeed   = {}
+tnPlayerHookType    = {}
+tnPlayerHookBodyPType = {}
+
+
 
 tPudgeLastForwardVec = {}
 tnPlayerHookType    = {}
@@ -26,6 +30,14 @@ tnHookTypeString = {
 	[2] = "npc_dota2x_pudgewars_unit_pudgehook_lv2",
 	[3] = "npc_dota2x_pudgewars_unit_pudgehook_lv3",
 	[4] = "npc_dota2x_pudgewars_unit_pudgehook_lv4"
+}
+
+tnHookParticleString = {
+	 --TODO FIND THE PARTICLES
+	 [1] = ""
+	,[2] = ""
+	,[3] = ""
+	,[4] = ""
 }
 tPossibleHookTargetName = {
 	 "npc_dota2x_pudgewars_pudge"
@@ -50,7 +62,8 @@ for i = 0,9 do
 		CurrentLength = nil,
 		Body = {}
 	}
-	tnPlayerHookType[i] = {tnHookTypeString[1]}
+	tnPlayerHookType[i] = tnHookTypeString[1]
+	tnPlayerHookBodyPType[i] = tnHookParticleString[1]
 	tnPlayerHookRadius[i] = 20
 	tnPlayerHookLength[i] = 500
 	tnPlayerHookSpeed[i] = 0.3
@@ -90,6 +103,8 @@ function OnHookStart(keys)
 	-- defined by units killed by the caster
 	
 	local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
+	
+	--local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBodyPType[ nPlayerID ] , PATTACH_CUSTOMORIGIN, caster )
 	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin)
 	tHookElements[nPlayerID].Body[1] = {
 	    index = nFXIndex,
