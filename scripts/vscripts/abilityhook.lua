@@ -1,16 +1,16 @@
 tHookElements = tHookElements or {}
 
-
-tHookLastPos = nil
 tnHookDamage = {175 , 250 , 350 , 500  }
 tnHookLength = {500 , 700 , 900 , 1200 }
 tnHookRadius = {20  , 30  , 50  , 80   }
-tnHookSpeed  = {400 , 450 , 520 , 600  }
+tnHookSpeed  = {0.3 , 0.4 , 0.6 , 0.9  }
+
 tnUpgradeHookDamageCost = {500 , 1000 , 1500 , 2000  }
 tnUpgradeHookLengthCost = {500 , 1000 , 1500 , 2000  }
 tnUpgradeHookRadiusCost = {500 , 1000 , 1500 , 2000  }
 tnUpgradeHookSpeedCost  = {500 , 1000 , 1500 , 2000  }
 tnPlayerHookDamage  = {}
+
 tnPlayerHookLength  = {}
 tnPlayerHookRadius  = {}
 tnPlayerHookSpeed   = {}
@@ -52,7 +52,9 @@ for i = 0,9 do
 	tnPlayerHookType[i] = {tnHookTypeString[1]}
 	tnPlayerHookRadius[i] = 20
 	tnPlayerHookLength[i] = 500
+	tnPlayerHookSpeed[i] = 0.3
 	tnHookMovedDistance[i] = 0
+
 	tHookLastPos[i] = nil
 	tHookCurrentPos[i] = nil
 	tbHookedNothing[i] = false
@@ -79,12 +81,18 @@ function OnHookStart(keys)
 		unit:SetForwardVector(vForwardVector)
 	end
 	
+	-- TODO replace "veil of discord" with correct particle， or even a table of effect 
+	-- defined by units killed by the caster
+	
 	local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
 	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin())
 	tHookElements[nPlayerID].Body[1] = nFXIndex
+	tHookElements[nPlayerID].Body[1].vec = vOrigin()
 end
+
+-- get the hooked unit
 local function GetHookedUnit(caster, head , plyid)
-	
+		
 	local tuHookedUnits = FindUnitsInRadius(
 		caster:GetTeam(),		--caster team
 		head:GetOrigin(),		--find position
@@ -99,20 +107,41 @@ local function GetHookedUnit(caster, head , plyid)
 			local va = false
 			for s,t in pairs (tPossibleHookTargetName) do
 				if v:GetName() == t then
+					-- the unit in the table , a valid hook unit
 					va = true
 				end
 			end
 			if not va then
+				-- not a valid unit , remove
 				table.remove(tuHookedUnits , k)
 			end
 		end
 	end
 	
 	if #tuHookedUnits >= 1  and tuHookedUnits[1] ~= caster then
+		-- return the nearest unit
 		return tuHookedUnits[1]
 	end
 	return nil
 end
+
+local function HookUnit( unit , caster )
+	print ( "hooking enemt" )
+	caster:SetOrigin(unit:GetOrigin())
+	ABILITY_HOOK = caster:FindAbilityByName( "dota2x_pudgewars_hook" )
+	ExecuteOrderFromTable({
+		UnitIndex = caster:entindex(),
+		OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
+		AbilityIndex = ABILITY_HOOK:entindex(),
+		TargetIndex = unit:entindex()
+	})
+	if unit:HasModifier(" dota2x_modifier_hooked ")
+		return 1
+	else
+		return nil
+	end
+end
+
 function OnHookChanneling(keys)
 
 
@@ -127,8 +156,9 @@ function OnHookChanneling(keys)
 		tHookElements[nPlayerID].CurrentLength = 2
 	end
 	
-	if tHookElements[nPlayerID].Target and 
-		tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH < tnPlayerHookLength[nPlayerID]
+	if not tHookElements[nPlayerID].Target and 
+		tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] 
+			< tnPlayerHookLength[nPlayerID]
 		then
 		if tPudgeLastForwardVec[nPlayerID] == nil then
 			tPudgeLastForwardVec[nPlayerID] = casterForwardVector
@@ -140,14 +170,53 @@ function OnHookChanneling(keys)
 		local y = (math.cos(aChangedFV)) * 1
 		local base = uHead:GetOrigin()
 		local vec = (base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z )
+
+		-- TODO replace "veil of discord" with correct particle， or even a table of effect 
+		-- defined by units killed by the caster
 		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
 		articleManager:SetParticleControl( nFXIndex, 0, vec)
 		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength] = nFXIndex
+		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength].vec = vec
 		
 		uHead:SetOrigin(vec)
 		uHead:SetForwardVector(x,y,base.z)
 		
 		tPudgeLastForwardVec[nPlayerID] = casterForwardVector
+	end
+	local hooked = nil
+	if tHookElements[nPlayerID].Target then
+		local unit = tHookElements[nPlayerID].Target
+		while hooked == nil do
+			hooked = HookUnit( unit , uHead )
+		end
+	end
+	if (tHookElements[nPlayerID].Target and hooked ) or  
+		(tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] > tnPlayerHookLength[nPlayerID])
+		then
+		
+		local backVec = HookElements[nPlayerID].Body[#HookElements[nPlayerID].Body].vec
+		local paIndex = HookElements[nPlayerID].Body[#HookElements[nPlayerID].Body]
+		
+		ParticleManager:ReleaseParticleIndex( paIndex )
+		uHead:SetOrigin(backVec)
+		
+		table.remove(HookElements[nPlayerID].Body,#HookElements[nPlayerID].Body)
+		
+		if #HookElements[nPlayerID].Body == 0 then
+			if tHookElements[nPlayerID].Target:IsAlive() then
+				tHookElements[nPlayerID].Target:RemoveModifierByName( "dota2x_modifier_hooked" )
+			end
+			
+			hooked = false
+			tHookElements[nPlayerID].CurrentLength = nil
+			
+			uHead:Remove()
+			tHookElements[nPlayerID].Head = nil
+			HookElements[nPlayerID].Body = {}
+			tHookElements[nPlayerID].Target = nil
+			
+			caster:RemoveModifierByName( "modifier_pudgewars_pudgemeathook_think_interval" )
+		end
 	end
 	--[[
 	--print("********* TRYING TO CATCH UNIT *** *********")
