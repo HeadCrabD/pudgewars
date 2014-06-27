@@ -108,7 +108,7 @@ local function GetHookedUnit(caster, head , plyid)
 		end
 	end
 	
-	if #tuHookedUnits >= 1 then
+	if #tuHookedUnits >= 1  and tuHookedUnits[1] ~= caster then
 		return tuHookedUnits[1]
 	end
 	return nil
