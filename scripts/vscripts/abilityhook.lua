@@ -165,6 +165,8 @@ function OnHookChanneling(keys)
 	
 	if tHookElements[nPlayerID].CurrentLength == nil then
 		tHookElements[nPlayerID].CurrentLength = 2
+	else
+		tHookElements[nPlayerID].CurrentLength = tHookElements[nPlayerID].CurrentLength + 1
 	end
 	
 	-- if not hook anything and not reach the max length continue to longer the hook
@@ -191,7 +193,7 @@ function OnHookChanneling(keys)
 		-- defined by units killed by the caster
 		-- create next hook body
 		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
-		articleManager:SetParticleControl( nFXIndex, 0, vec)
+		articleManager:SetParticleControl( nFXIndex, 0, vec3)
 		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength] = {
 			index =  nFXIndex,
 			vec = vec3
