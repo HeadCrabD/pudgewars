@@ -169,7 +169,8 @@ function OnHookChanneling(keys)
 			tPudgeLastForwardVec[nPlayerID] = casterForwardVector
 		end
 		
-		local aChangedFV = math.acos(casterForwardVector.x) - math.acos((tPudgeLastForwardVec[nPlayerID].x)
+		local aChangedFV = math.atan2(casterForwardVector.y , casterForwardVector.x) 
+			- math.atan2(tPudgeLastForwardVec[nPlayerID].y , tPudgeLastForwardVec[nPlayerID].x)
 		local aChangedFV = aChangedFV / 10
 		local x = (math.sin(aChangedFV)) * 1
 		local y = (math.cos(aChangedFV)) * 1
