@@ -183,7 +183,7 @@ function OnHookChanneling(keys)
 		local base = uHead:GetOrigin()
 		
 		-- define the vector of next body element
-		local vec = {base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z }
+		local vec = {base.x + x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]  , base.y + y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] , base.z }
 
 		-- TODO replace "veil of discord" with correct particle， or even a table of effect 
 		-- defined by units killed by the caster
