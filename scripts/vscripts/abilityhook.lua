@@ -172,8 +172,8 @@ function OnHookChanneling(keys)
 		local aChangedFV = math.atan2(casterForwardVector.y , casterForwardVector.x) 
 			- math.atan2(tPudgeLastForwardVec[nPlayerID].y , tPudgeLastForwardVec[nPlayerID].x)
 		local aChangedFV = aChangedFV / 10
-		local x = (math.sin(aChangedFV)) * 1
-		local y = (math.cos(aChangedFV)) * 1
+		local x = (math.cos(aChangedFV)) * 1
+		local y = (math.sin(aChangedFV)) * 1
 		local base = uHead:GetOrigin()
 		local vec = (base.x + x * PER_HOOK_BODY_LENGTH , base.y + y * PER_HOOK_BODY_LENGTH , base.z )
 
