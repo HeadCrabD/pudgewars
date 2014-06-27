@@ -214,15 +214,15 @@ function OnHookChanneling(keys)
 		(tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] > tnPlayerHookLength[nPlayerID])
 		then
 		
-		local backVec = HookElements[nPlayerID].Body[#HookElements[nPlayerID].Body].vec
-		local paIndex = HookElements[nPlayerID].Body[#HookElements[nPlayerID].Body]
+		local backVec = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].vec
+		local paIndex = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body]
 		
 		ParticleManager:ReleaseParticleIndex( paIndex )
 		uHead:SetOrigin(backVec)
 		
-		table.remove(HookElements[nPlayerID].Body,#HookElements[nPlayerID].Body)
+		table.remove(tHookElements[nPlayerID].Body,#tHookElements[nPlayerID].Body)
 		
-		if #HookElements[nPlayerID].Body == 0 then
+		if #tHookElements[nPlayerID].Body == 0 then
 			if tHookElements[nPlayerID].Target:IsAlive() then
 				tHookElements[nPlayerID].Target:RemoveModifierByName( "dota2x_modifier_hooked" )
 			end
