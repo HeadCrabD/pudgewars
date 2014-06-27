@@ -194,7 +194,7 @@ function OnHookChanneling(keys)
 		-- create next hook body
 		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
 		articleManager:SetParticleControl( nFXIndex, 0, vec3)
-		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength] = {
+		HookElements[nPlayerID].Body[ #tnHookElements[nPlayerID] + 1 ] = {
 			index =  nFXIndex,
 			vec = vec3
 		}
