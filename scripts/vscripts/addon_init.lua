@@ -22,6 +22,7 @@ function Dynamic_Wrap( mt, name )
     end
 end
 
+InitLogFile("log/pudgewars.txt","init pudgewars")
 
 loadModule ( 'util' )
 loadModule ( 'pudgewars' )

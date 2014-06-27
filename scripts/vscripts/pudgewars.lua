@@ -44,8 +44,6 @@ function PudgeWarsGameMode:InitGameMode()
     --ListenToGameEvent('dota_player_used_ability', Dynamic_Wrap(PudgeWarsGameMode, 'AbilityUsed'), self)
     
     Convars:RegisterCommand('fake', function()
-        if not Convars:GetCommandClient() or DEBUG then
-            SendToServerConsole('dota_create_fake_clients')
             self:CreateTimer('assign_fakes', {
                 endTime = Time(),
                 callback = function(PudgeWars, args)
@@ -58,7 +56,6 @@ function PudgeWarsGameMode:InitGameMode()
                         end
                     end
                 end})
-        end
     end, 'Connects and assigns fake Players.', 0)
 
     local timeTxt = string.gsub(string.gsub(GetSystemTime(), ':', ''), '0','')
@@ -86,7 +83,7 @@ function PudgeWarsGameMode:InitGameMode()
     self.eGoldSpawner  = Entities:FindByName(nil,"dota_pudgewar_gold_spawner" )
     self.eChestSpawner = Entities:FindByName(nil,"dota_pudgewar_chest_spawner")
 
-    
+
     self.t0 = 0
     PrecacheUnitByName('npc_precache_everything')
     print('[PudgeWars] Done loading PudgeWars gamemode!\n\n')
