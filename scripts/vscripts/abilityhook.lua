@@ -89,8 +89,10 @@ function OnHookStart(keys)
 	-- create the first hook body
 	local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
 	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin)
-	tHookElements[nPlayerID].Body[1] = nFXIndex
-	tHookElements[nPlayerID].Body[1].vec = vOrigin
+	tHookElements[nPlayerID].Body[1] = {
+		index = nFXIndex,
+		vec = vOrigin
+	}
 end
 
 -- get the hooked unit
@@ -183,15 +185,17 @@ function OnHookChanneling(keys)
 		local base = uHead:GetOrigin()
 		
 		-- define the vector of next body element
-		local vec = {base.x + x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]  , base.y + y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] , base.z }
+		local vec3 = {base.x + x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]  , base.y + y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] , base.z }
 
 		-- TODO replace "veil of discord" with correct particle， or even a table of effect 
 		-- defined by units killed by the caster
 		-- create next hook body
 		local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
 		articleManager:SetParticleControl( nFXIndex, 0, vec)
-		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength] = nFXIndex
-		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength].vec = vec
+		HookElements[nPlayerID].Body[tHookElements[nPlayerID].CurrentLength] = {
+			index =  nFXIndex,
+			vec = vec3
+		}
 		
 		-- move the head
 		uHead:SetOrigin(vec)
@@ -215,7 +219,7 @@ function OnHookChanneling(keys)
 		then
 		
 		local backVec = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].vec
-		local paIndex = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body]
+		local paIndex = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].index
 		
 		ParticleManager:ReleaseParticleIndex( paIndex )
 		uHead:SetOrigin(backVec)
