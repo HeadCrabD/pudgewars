@@ -222,7 +222,7 @@ function OnHookChanneling(keys)
 	
 	if not tbPlayerFinishedHook[nPlayerID] then
 		local uHead = tHookElements[nPlayerID].Head
-		if uHead ~= nil then
+		if uHead ~= nil and tHookElements[nPlayerID].Target == nil then
 			tHookElements[nPlayerID].Target = GetHookedUnit(caster , uHead , nPlayerID )
 		end
 		
