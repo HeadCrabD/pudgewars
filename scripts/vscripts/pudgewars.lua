@@ -83,7 +83,7 @@ function PudgeWarsGameMode:InitGameMode()
     self.eGoldSpawner  = Entities:FindByName(nil,"dota_pudgewar_gold_spawner" )
     self.eChestSpawner = Entities:FindByName(nil,"dota_pudgewar_chest_spawner")
 
-
+    initHookData()
     self.t0 = 0
     PrecacheUnitByName('npc_precache_everything')
     print('[PudgeWars] Done loading PudgeWars gamemode!\n\n')
@@ -176,7 +176,7 @@ function PudgeWarsGameMode:Think()
         PudgeWarsGameMode.t0 = now
     end
     local dt = now - PudgeWarsGameMode.t0
-    t0 = now
+    PudgeWarsGameMode.t0 = now
 
     for k,v in pairs(PudgeWarsGameMode.timers) do
         local bUseGameTime = TIMER_USE_GAME_TIME
@@ -266,9 +266,9 @@ function PudgeWarsGameMode:AutoAssignPlayer(keys)
             local heroEntity = ply:GetAssignedHero()
             if PlayerResource:IsFakeClient(playerID) then
                 if heroEntity == nil then
-                    CreateHeroForPlayer('npc_dota2x_pudgewars_pudge', ply)
+                    CreateHeroForPlayer('npc_dota_hero_pudge', ply)
                 else
-                    PlayerResource:ReplaceHeroWith(playerID, 'npc_dota2x_pudgewars_pudge', STARTING_GOLD , 0)
+                    PlayerResource:ReplaceHeroWith(playerID, 'npc_dota_hero_pudge', STARTING_GOLD , 0)
                 end
             end
             heroEntity = ply:GetAssignedHero()
