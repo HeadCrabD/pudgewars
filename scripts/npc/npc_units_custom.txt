@@ -127,6 +127,8 @@
 			//"model"			"models/heroes/undying/undying_flesh_golem.mdl"
 			//"model"			"models/development/invisiblebox.mdl"
 
+			//
+			"particlefile"				"particles/particle_quas_on_bloodseeker_rupture_lv.pcf"
 			//"particlefile"				"particles/units/heroes/hero_antimage.pcf"
 			//"particlefile"				"particles/units/heroes/hero_axe.pcf"
 			//"particlefile"				"particles/units/heroes/hero_bane.pcf"
