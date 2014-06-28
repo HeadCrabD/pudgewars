@@ -1,5 +1,5 @@
 tbPlayerFinishedHook = {}
-tbPlayerReachesMaxLength = {}
+tbPlayerHookingBack = {}
 
 tHookElements = tHookElements or {}
 
@@ -95,7 +95,7 @@ function OnHookStart(keys)
 	local nPlayerID = keys.unit:GetPlayerID()
 
 	tbPlayerFinishedHook[nPlayerID] = false
-	tbPlayerReachesMaxLength[nPlayerID] = false
+	tbPlayerHookingBack[nPlayerID] = false
 
 	print("player "..tostring(nPlayerID).." Start a hook")
 	
@@ -227,7 +227,7 @@ function OnHookChanneling(keys)
 		local uHead = tHookElements[nPlayerID].Head
 		if uHead ~= nil 
 			and tHookElements[nPlayerID].Target == nil 
-			and not tbPlayerReachesMaxLength[nPlayerID]
+			and not tbPlayerHookingBack[nPlayerID]
 			then
 			tHookElements[nPlayerID].Target = GetHookedUnit(caster , uHead , nPlayerID )
 		end
@@ -312,11 +312,12 @@ function OnHookChanneling(keys)
 
 			vec3.z = vec3.z + 150
 			ParticleManager:SetParticleControl( nFXIndex, 0, vec3)
-			ParticleManager:SetParticleControl( nFXIndex, 1, vec3 )
+			ParticleManager:SetParticleControl( nFXIndex, 1, vec3)
 			ParticleManager:SetParticleControl( nFXIndex, 2, vec3)
 			ParticleManager:SetParticleControl( nFXIndex, 3, vec3)
 			
-			tPlayerPudgeLastFV[nPlayerID] = casterForwardVector
+			--TRYING TO MAKE THE HOOK TURN BASED ON THE PLAYER CURRENT  FORWARD - HOOK START FORWARD
+			--tPlayerPudgeLastFV[nPlayerID] = casterForwardVector
 		end
 		-- if hoooked someone then hook it
 		
@@ -336,7 +337,7 @@ function OnHookChanneling(keys)
 				> tnPlayerHookLength[nPlayerID])
 			then
 
-			tbPlayerReachesMaxLength[nPlayerID] = true
+			tbPlayerHookingBack[nPlayerID] = true
 
 			local backVec = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].vec
 			local paIndex = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].index
