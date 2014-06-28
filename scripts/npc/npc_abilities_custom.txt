@@ -35,6 +35,21 @@
         "Target"            "CASTER"
         "ModifierName"      "modifier_pudgewars_pudgemeathook_think_interval"
       }
+      //"SpawnUnit"
+      //{
+      //  "UnitName"          "npc_dota2x_pudgewars_unit_pudgehook_lv1"
+      //  "UnitCount"         "1"
+      //  "SpawnRadius"       "0"
+      //  "Target"            "POINT"
+      //  "OnSpawn"
+      //  {
+      //    "RunScript"
+      //    {
+      //      "ScriptFile"        "scripts/vscripts/abilityhook.lua"
+      //      "Function"          "OnFinishHeadSpawn"
+      //    }
+      //  }
+      //}
     }
     "Modifiers"
     {

@@ -117,10 +117,8 @@ end
 
 
 function OnHookStart(keys)
-
 	-- a player starts a hook
 	--PrintTable(keys)
-	
 	local caster = EntIndexToHScript(keys.caster_entindex)
 	local vOrigin = caster:GetOrigin()
 	local vForwardVector = caster:GetForwardVector()
@@ -664,4 +662,12 @@ function OnUpgradeHookSpeedFinished( keys )
 		tnPlayerHookSpeed[ nPlayerID ] =  tnHookSpeed[ nCurrentLevel + 1 ]
 	end
 	
+end
+
+
+function OnFinishHeadSpawn( keys )
+	PrintTable(keys)
+
+	local point = keys.target.__self:GetOrigin()
+	print(point)
 end
