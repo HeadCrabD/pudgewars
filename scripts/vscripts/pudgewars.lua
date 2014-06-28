@@ -61,8 +61,6 @@ function PudgeWarsGameMode:InitGameMode()
     local timeTxt = string.gsub(string.gsub(GetSystemTime(), ':', ''), '0','')
     math.randomseed(tonumber(timeTxt))
 
-    -- init the hook data defined in ability hook.lua
-
     --Init Timers
     self.timers = {}
 
@@ -172,7 +170,7 @@ function PudgeWarsGameMode:Think()
     end
 
     local now = GameRules:GetGameTime()
-    if PudgeWarsGameMode.t0 == 0 then
+    if PudgeWarsGameMode.t0 == nil or PudgeWarsGameMode == 0 then
         PudgeWarsGameMode.t0 = now
     end
     local dt = now - PudgeWarsGameMode.t0
@@ -206,40 +204,15 @@ function PudgeWarsGameMode:Think()
     return dt
 end
 function PudgeWarsGameMode:AutoAssignPlayer(keys)
-    print ('[pudgewars] AutoAssignPlayer')
-    PrintTable (keys)
+    -- if any player connected, then start theh game mode
     PudgeWarsGameMode:CaptureGameMode()
+
+    print ('[pudgewars] AutoAssignPlayer Fired')
+    PrintTable (keys)
     
     local entIndex = keys.index + 1
-    -- The Player entity of the joining user
     local ply = EntIndexToHScript(entIndex)
-    
-    -- The Player ID of the joining player
     local playerID = ply:GetPlayerID()
-    
-    -- Update the user ID table with this user
-    self.vUserIds[keys.userid] = ply
-    -- Update the Steam ID table
-    self.vSteamIds[PlayerResource:GetSteamAccountID(playerID)] = ply
-    
-    -- If the player is a broadcaster flag it in the Broadcasters table
-    if PlayerResource:IsBroadcaster(playerID) then
-        self.vBroadcasters[keys.userid] = 1
-        return
-    end
-    
-    -- If this player is a bot (spectator) flag it and continue on
-    if self.vBots[keys.userid] ~= nil then
-        return
-    end
-
-    
-    playerID = ply:GetPlayerID()
-    -- Figure out if this player is just reconnecting after a disconnect
-    if self.vPlayers[playerID] ~= nil then
-        self.vUserIds[keys.userid] = ply
-        return
-    end
     
     -- If we're not on D2MODD.in, assign players round robin to teams
     if playerID == -1 then
@@ -257,43 +230,29 @@ function PudgeWarsGameMode:AutoAssignPlayer(keys)
 
     --Autoassign player
     self:CreateTimer('assign_player_'..entIndex, {
-    endTime = Time(),
-    callback = function(pudgewars, args)
-        -- Make sure the game has started
-        print ('ASSIGNED')
-        if GameRules:State_Get() >= DOTA_GAMERULES_STATE_PRE_GAME then
-            -- Assign a hero to a fake client
+        endTime = Time(),
+        callback = function(pudgewars, args)
             local heroEntity = ply:GetAssignedHero()
-            if PlayerResource:IsFakeClient(playerID) then
-                if heroEntity == nil then
-                    CreateHeroForPlayer('npc_dota_hero_pudge', ply)
-                else
-                    PlayerResource:ReplaceHeroWith(playerID, 'npc_dota_hero_pudge', STARTING_GOLD , 0)
-                end
-            end
-            heroEntity = ply:GetAssignedHero()
-            -- Check if we have a reference for this player's hero
-            if heroEntity ~= nil and IsValidEntity(heroEntity) then
-                -- Set up a heroTable containing the state for each player to be tracked
-                local heroTable = {
-                    hero = heroEntity,
-                    nTeam = ply:GetTeam(),
-                    bRoundInit = false,
-                    name = self.vUserNames[keys.userid],
-                }
-                self.vPlayers[playerID] = heroTable
-
-                if GameRules:State_Get() > DOTA_GAMERULES_STATE_PRE_GAME then
-                        -- This section runs if the player picks a hero after the round starts
-                end
-
-                return
+            if heroEntity == nil then
+                print("ply hero entity = nil reassign it ")
+                CreateHeroForPlayer('npc_dota_hero_pudge', ply)
+                heroEntity = ply:GetAssignedHero()
+                ABILITY = heroEntity:FindAbilityByName("dota2x_pudgewars_hook")
+                if ABILITY then ABILITY:SetLevel(1) else print("dota2x_pudgewars_hook not found") end
+                ABILITY = heroEntity:FindAbilityByName("dota2x_pudgewars_toggle_hook")
+                if ABILITY then ABILITY:SetLevel(1) else print("dota2x_pudgewars_toggle_hook not found") end
+                ABILITY = heroEntity:FindAbilityByName("dota2x_pudgewars_upgrage_hook_damage")
+                if ABILITY then ABILITY:SetLevel(1) else print("dota2x_pudgewars_upgrage_hook_damage not found") end
+                ABILITY = heroEntity:FindAbilityByName("dota2x_pudgewars_upgrade_hook_radius")
+                if ABILITY then ABILITY:SetLevel(1) else print("dota2x_pudgewars_upgrade_hook_radius not found") end
+                ABILITY = heroEntity:FindAbilityByName("dota2x_pudgewars_upgrade_hook_length")
+                if ABILITY then ABILITY:SetLevel(1) else print("dota2x_pudgewars_upgrade_hook_length not found") end
+                ABILITY = heroEntity:FindAbilityByName("dota2x_pudgewars_upgrade_hook_speed")
+                if ABILITY then ABILITY:SetLevel(1) else print("dota2x_pudgewars_upgrade_hook_speed not found") end
+                heroEntity:SetAbilityPoints(0)
             end
         end
-
-        return Time() + 1.0
-    end
-})
+    })
 end
 
 function PudgeWarsGameMode:HandleEventError(name, event, err)

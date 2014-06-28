@@ -73,17 +73,50 @@
   		"WakesNeutrals"			"0"
   	}
 
-  	"npc_dota2x_pudgewars_unit_test"
-  	{
-  		"model"					"models/heroes/pudge/weapon.mdl"
-  		"BaseClass"				"npc_dota_creep_neutral"
-  		"AttackCapabilities"	"DOTA_UNIT_CAP_NO_ATTACK"
-  		"MovementCapabilities"	"DOTA_UNIT_CAP_MOVE_FLY"
-  		"VisionDaytimeRange"	"0"
-  		"VisionNighttimeRange"	"0"
-  		"HasInventory"			"0"
-  		"WakesNeutrals"			"0"
-  	}
+  	"npc_dota2x_pudgewars_unit_dummy"
+	{
+		// General
+		//
+		"BaseClass"					"npc_dota_base_additive"	// Class of entity of link to.
+		"Model"						"models/development/invisiblebox.mdl"	// Model.
+		"SoundSet"					"Creep_Good_Range"					// Name of sound set.
+		"Level"						"0"
+		"UnitLabel"					"healing_ward"
+
+		// Bounds
+		//----------------------------------------------------------------
+		"BoundsHullName"			"DOTA_HULL_SIZE_SMALL"			// Hull type used for navigation/locomotion.
+
+		// Movement
+		//----------------------------------------------------------------
+		"MovementCapabilities"		"DOTA_UNIT_CAP_MOVE_GROUND"			// Type of locomotion - ground, air
+		"MovementSpeed"				"450"		// Speed
+		"MovementTurnRate"			"1.0"		// Turning rate.
+		"FollowRange"				"250"		// Distance to keep when following
+
+		// Status
+		//----------------------------------------------------------------
+		"StatusHealth"				"1"			// Base health.
+		"StatusHealthRegen"			"0"			// Health regeneration rate.
+		"StatusMana"				"0"			// Base mana.
+		"StatusManaRegen"			"0"			// Mana regeneration rate.
+
+		// Team
+		//----------------------------------------------------------------
+		"TeamName"					"DOTA_TEAM_GOODGUYS"			// Team name.
+		"CombatClassAttack"			"DOTA_COMBAT_CLASS_ATTACK_PIERCE"
+		"CombatClassDefend"			"DOTA_COMBAT_CLASS_DEFEND_SOFT"
+		"UnitRelationshipClass"		"DOTA_NPC_UNIT_RELATIONSHIP_TYPE_WARD"
+		
+		// Vision
+		//----------------------------------------------------------------
+		"VisionDaytimeRange"		"0"		// Range of vision during day light.
+		"VisionNighttimeRange"		"0"		// Range of vision at night time.
+
+		// Bots
+		//----------------------------------------------------------------
+		"AttackDesire"				"1.5"		// How much bots want to attack them vs other non-hero things
+	}
 
   //------------------------------------------------------------------------------------
   //- This unit can be used to precache different models/particles/sounds              -
@@ -128,7 +161,9 @@
 			//"model"			"models/development/invisiblebox.mdl"
 
 			//
-			"particlefile"				"particles/particle_quas_on_bloodseeker_rupture_lv.pcf"
+			"particlefile"				"particles/particle_quas_on_bloodseeker_rupture_lv.pcf"	//particle name the_quas_trail
+			"particlefile"					"particles/particle_wex_on_bloodseeker.pcf"	//particle name the_wex_trail
+			"particlefile"					"particles/particle_exort_on_bloodseeker.pcf"	//particle name the_exort_trail
 			//"particlefile"				"particles/units/heroes/hero_antimage.pcf"
 			//"particlefile"				"particles/units/heroes/hero_axe.pcf"
 			//"particlefile"				"particles/units/heroes/hero_bane.pcf"

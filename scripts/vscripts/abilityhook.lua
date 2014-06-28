@@ -6,14 +6,16 @@ WORLDMAX_VEC = Vector(GetWorldMaxX(),GetWorldMaxY(),0)
 function initHookData()
 	tbHookByAlly = {}
 
+	tbPlayerOutterHook   = {}
 	tbPlayerFinishedHook = {}
-	tbPlayerHookingBack = {}
+	tbPlayerHookingBack  = {}
+	tbPlayerHooking      = {}
 
 	tHookElements = tHookElements or {}
-	tnHookDamage = {175 , 250 , 350 , 500  }
-	tnHookLength = {500 , 700 , 900 , 1200 }
-	tnHookRadius = {20  , 30  , 50  , 80   }
-	tnHookSpeed  = {0.2 , 0.3 , 0.4 , 0.6  }
+	tnHookDamage  = {175 , 250 , 350 , 500  }
+	tnHookLength  = {500 , 700 , 900 , 1200 }
+	tnHookRadius  = {20  , 30  , 50  , 80   }
+	tnHookSpeed   = {0.2 , 0.3 , 0.4 , 0.6  }
 
 	tnUpgradeHookDamageCost = {500 , 1000 , 1500 , 2000  }
 	tnUpgradeHookLengthCost = {500 , 1000 , 1500 , 2000  }
@@ -25,7 +27,7 @@ function initHookData()
 	tnPlayerHookRadius  = {}
 	tnPlayerHookSpeed   = {}
 	tnPlayerHookType    = {}
-	tnPlayerHookBDType = {}
+	tnPlayerHookBDType  = {}
 	tPlayerPudgeLastFV  = {}
 	tnPlayerHookType    = {}
 	tnPlayerKillStreak  = {}
@@ -70,6 +72,8 @@ function initHookData()
 		tnPlayerHookSpeed[i] = 0.4
 		tnPlayerHookDamage[i] = 200
 
+		tbPlayerOutterHook[i] = false
+
 	end
 	PudgeWarsGameMode:CreateTimer("Create_Test_units",{
 		endTime = Time(),
@@ -87,16 +91,28 @@ function initHookData()
 					--ability_dota2x_pudgewars_hook_applier
 					
 					local caster = CreateUnitByName(v,Vector(0,0,0) + RandomVector(1000),false,nil,nil,DOTA_TEAM_GOODGUYS)
-					
-					caster:AddAbility("ability_dota2x_pudgewars_hook_applier")
-					local ABILITY_HOOK_APPLIER = caster:FindAbilityByName("ability_dota2x_pudgewars_hook_applier")
+					local dummy = CreateUnitByName("npc_dota2x_pudgewars_unit_dummy", 
+						caster:GetAbsOrigin(), false, caster, caster, DOTA_TEAM_GOODGUYS)
+					if dummy then print("test dummy unit created") end
+					dummy:AddAbility("ability_dota2x_pudgewars_hook_applier")
+					local ABILITY_HOOK_APPLIER = dummy:FindAbilityByName("ability_dota2x_pudgewars_hook_applier")
+					if ABILITY_HOOK_APPLIER then print("ability successful added") end
 					ABILITY_HOOK_APPLIER:SetLevel(1)
-					ExecuteOrderFromTable({
-							UnitIndex = caster:entindex(),
-							OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
-							AbilityIndex = ABILITY_HOOK_APPLIER:entindex(),
-							TargetIndex = caster:entindex()
+	
+					dummy:CastAbilityOnTarget(caster, ABILITY_HOOK_APPLIER, 0 )
+					PudgeWarsGameMode:CreateTimer("damage_dealer_"..tostring(k)..tostring(GameRules:GetGameTime()),
+					{
+						endTime = Time() + 0.5,
+						callback = function()
+							if caster:HasModifier("modifier_pudgewars_hooked") then
+								print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+								print("the test unit  has the hooked modifier")
+								print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+							end
+							dummy:Destroy()
+						end
 					})
+					
 					
 				end
 				PrintTable(tPossibleHookTargetName)
@@ -117,70 +133,117 @@ end
 
 
 function OnHookStart(keys)
-	-- a player starts a hook
-	--PrintTable(keys)
+	local targetPoint = keys.target_points[1]
 	local caster = EntIndexToHScript(keys.caster_entindex)
-	local vOrigin = caster:GetOrigin()
-	local vForwardVector = caster:GetForwardVector()
-	--PrintTable(vForwardVector)
 	local nPlayerID = keys.unit:GetPlayerID()
 
+	print("player "..nPlayerID.." Start A Hook")
+
+	--create the hook head
+	tbPlayerHooking[nPlayerID] = false
 	tbPlayerFinishedHook[nPlayerID] = false
 	tbPlayerHookingBack[nPlayerID] = false
-
-	print("player "..tostring(nPlayerID).." Start a hook")
-	PrintTable(keys)
-	print("-------------------------------------------------")
-	PrintTable(keys.caster.__self)
-	print("-------------------------------------------------")
-	PrintTable(keys.ability.__self)
-	print("-------------------------------------------------")
-	PrintTable(keys.attacker.__self)
-	-- create the hook head
-	local casterOrigin = caster:GetOrigin()
-	casterOrigin.z = casterOrigin.z - 30
+	tHookElements[nPlayerID].Target = nil
+	tHookElements[nPlayerID].CurrentLength = nil
+	local hasModifieroh = false
+	if caster:HasModifier("pudgewars_outter_hook") then
+		hasModifieroh = true
+	end
+	if not hasModifieroh then targetPoint = caster:GetOrigin() end
 	local unit = CreateUnitByName(
 		"npc_dota2x_pudgewars_unit_pudgehook_lv1"
-		,casterOrigin
+		,targetPoint
 		,false
 		,nil
 		,nil
 		,caster:GetTeam()
 		)
-	
-	if unit == nil then 
-		print("fail to create the head")
+	if not unit then
+		print("failed to create hook head")
 	else
+		-- store the head
 		tHookElements[nPlayerID].Head.unit = unit
-		unit:SetForwardVector(vForwardVector)
+
+		-- catch the head position
+		local vOrigin = unit:GetOrigin()
+		
+		--create and store the first body		
+		local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBDType[ nPlayerID ] , PATTACH_CUSTOMORIGIN, caster )
+		vOrigin.z = vOrigin.z + 150
+		ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin )
+		ParticleManager:SetParticleControl( nFXIndex, 1, vOrigin )
+		ParticleManager:SetParticleControl( nFXIndex, 2, vOrigin )
+		ParticleManager:SetParticleControl( nFXIndex, 3, vOrigin )
+		tHookElements[nPlayerID].Body[1] = {
+		    index = nFXIndex,
+		    vec = vOrigin
+		}
+
+		-- create the head trail particle
+		tnFXIndex = ParticleManager:CreateParticle( "the_quas_trail" , PATTACH_CUSTOMORIGIN, caster )
+		ParticleManager:SetParticleControl( tnFXIndex, 0, vOrigin )
+		tHookElements[nPlayerID].Head.index = tnFXIndex
+		
+		--remove the set ability and add release ability
+			caster:RemoveAbility("dota2x_pudgewars_hook")
+			caster:AddAbility("dota2x_pudgewars_release_hook")
+			ABILITY_RELEASE_HOOK = caster:FindAbilityByName("dota2x_pudgewars_release_hook")
+			ABILITY_RELEASE_HOOK:SetLevel(1)
+		
+		if not hasModifieroh then
+
+			ExecuteOrderFromTable({
+				UnitIndex = caster:entindex(),
+				OrderType = DOTA_UNIT_ORDER_CAST_NO_TARGET,
+				AbilityIndex = ABILITY_RELEASE_HOOK:entindex(),
+			})
+			
+		end
+	end
+end
+
+function OnSettingHookDirection(keys)
+	local caster = EntIndexToHScript(keys.caster_entindex)
+	local nPlayerID = caster:GetPlayerID()
+	local casterFV = caster:GetForwardVector()
+	local head = tHookElements[nPlayerID].Head.unit
+	head:SetForwardVector(casterFV)
+end
+function OnSettingHookDirectionTimeUp(keys)
+	local caster = EntIndexToHScript(keys.caster_entindex)
+	local nPlayerID = caster:GetPlayerID()
+	local head = tHookElements[nPlayerID].Head.unit
+	local headpa = tHookElements[nPlayerID].Head.index
+	local body1pa = tHookElements[nPlayerID].Body[1].index
+	local ABILITY_SETTING_HOOK_DIRECTION = caster:FindAbilityByName("dota2x_pudgewars_release_hook")
+	if not tbPlayerHooking[nPlayerID] then
+		head:Remove()
+		ParticleManager:SetParticleControl(headpa,0,WORLDMAX_VEC)
+		ParticleManager:ReleaseParticleIndex(headpa)
+		ParticleManager:SetParticleControl(body1pa,0,WORLDMAX_VEC)
+		ParticleManager:SetParticleControl(body1pa,1,WORLDMAX_VEC)
+		ParticleManager:SetParticleControl(body1pa,2,WORLDMAX_VEC)
+		ParticleManager:SetParticleControl(body1pa,3,WORLDMAX_VEC)
+		ParticleManager:ReleaseParticleIndex(body1pa)
 	end
 
-	tPlayerPudgeLastFV[nPlayerID] = vForwardVector
-
-	local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBDType[ nPlayerID ] , PATTACH_CUSTOMORIGIN, caster )
-	vOrigin.z = vOrigin.z + 150
-	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin )
-	ParticleManager:SetParticleControl( nFXIndex, 1, vOrigin )
-	ParticleManager:SetParticleControl( nFXIndex, 2, vOrigin )
-	ParticleManager:SetParticleControl( nFXIndex, 3, vOrigin )
-	AppendToLogFile("log/pudgewars.txt","Particle Index 1"..tostring(nFXIndex).."\n")
-	
-	tnFXIndex = ParticleManager:CreateParticle( "the_quas_trail" , PATTACH_CUSTOMORIGIN, caster )
-	ParticleManager:SetParticleControl( tnFXIndex, 0, vOrigin )
-	AppendToLogFile("log/pudgewars.txt","Particle Index 2"..tostring(tnFXIndex).."\n")
-	tHookElements[nPlayerID].Head.paIndex = tnFXIndex
-	
-	tHookElements[nPlayerID].Body[1] = {
-	    index = nFXIndex,
-	    vec = vOrigin
-	}
+	if ABILITY_SETTING_HOOK_DIRECTION then 
+		caster:RemoveAbility("dota2x_pudgewars_release_hook")
+		caster:AddAbility("dota2x_pudgewars_hook")
+		if caster:HasModifier("pudgewars_setting_hook") then
+			caster:RemoveModifierByName("pudgewars_setting_hook")
+		end
+		local ABILITY_HOOK = caster:FindAbilityByName("dota2x_pudgewars_hook")
+		if ABILITY_HOOK then ABILITY_HOOK:SetLevel(1) end
+	end
 end
+
 local function showCenterMessage( msg )
 	local m = {
 		message= msg,
 		duration = 2
 	}
-	PudgewarsGameMode:FireGameEvent("show_center_message",m)
+	FireGameEvent("show_center_message",m)
 	-- body
 end
 -- get the hooked unit
@@ -240,72 +303,40 @@ local function dealLastHit( caster,target )
 	end
 end
 
-local function HookUnit( unit , caster ,plyid )
+local function HookUnit( target , caster ,plyid )
 	print ( "hooked something" )
-	print ( "the enemy name "..unit:GetName())
+	print ( "the enemy name "..target:GetName())
 
-	local casterOrigin = caster:GetOrigin()
-	local uOrigin = unit:GetOrigin()
-	
-	local nFXIndex = ParticleManager:CreateParticle( "necrolyte_scythe", PATTACH_CUSTOMORIGIN, caster )
-	ParticleManager:SetParticleControl(nFXIndex,0,casterOrigin)
-	ParticleManager:SetParticleControl(nFXIndex,1,casterOrigin)
-	ParticleManager:SetParticleControl(nFXIndex,2,uOrigin)
-	ParticleManager:ReleaseParticleIndex(nFXIndex)
-
-	caster:AddAbility("ability_dota2x_pudgewars_hook_applier")
-	local ABILITY_HOOK_APPLIER = caster:FindAbilityByName("ability_dota2x_pudgewars_hook_applier")
-	ABILITY_HOOK_APPLIER:SetLevel(1)
-	ExecuteOrderFromTable({
-			UnitIndex = caster:entindex(),
-			OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
-			AbilityIndex = ABILITY_HOOK_APPLIER:entindex(),
-			TargetIndex = unit:entindex()
-	})
-	caster:RemoveAbility("ability_dota2x_pudgewars_hook_applier")
-	if unit:HasModifier("modifier_pudgewars_hooked") then
-		print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-		print("the unit has the hooked modifier")
-		print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	end
-	
-	local dmg = tnPlayerHookDamage[plyid]
-	print("dmg = "..tostring(dmg).."playerdi"..tostring(plyid))
-	local hp = unit:GetHealth()
-	print(" hp = "..tostring(hp))
-	if dmg < hp then
-		-- take away health directly
-		unit:SetHealth(hp-dmg)
-	else
-		-- ADD THE ABILITY "ability_deal_the_last_hit" AND DEAL DAMAGE WITH THE SPELL
-		dealLastHit(caster,unit)
-	end
-	
-	--THINK ABOUT HEADSHOT AND DENY
-	if unit:HasModifier("dota2x_modifier_hooked") then
-		print("unit has modifier")
-		if unit:GetTeam() ~= caster:GetTeam() then
+	if target:HasModifier("modifier_pudgewars_hooked") then
+		print("the hooked unit has the hooked modifier already!!")
+		print("the hooked unit has the hooked modifier already!!")
+		print(tostring(target:GetTeamNumber()))
+		print(tostring(caster:GetTeamNumber()))
+		print(tostring(target:GetTeam()))
+		print(tostring(caster:GetTeam()))
+		print("the hooked unit has the hooked modifier already!!")
+		if target:GetTeam() ~= caster:GetTeam() then
 			--HEAD SHOT
-			print("unit has modifier")
-			dealLastHit(caster,unit)
+			print("unit has been hooked and its an enemy")
+			dealLastHit(caster,target)
 			showCenterMessage("#pudgewars_head_shot")
 			--TODO
 			--EMIT SOUND
 		end
-		if tbHookByAlly[unit] then
+		if tbHookByAlly[target] then
 			print("the unit has been hooked by ally")
 			if unit:GetTeam() ~= caster:GetTeam() then
 				--HEADSHOT
-				dealLastHit(caster,unit)
+				dealLastHit(caster,target)
 				showCenterMessage("#pudgewars_head_shot")
 				--TODO
 				--EMIT SOUND
 			end
 		else
 			print("the unit has been hooked by enemy")
-			if unit:GetTeam() == caster:GetTeam() then
+			if target:GetTeam() == caster:GetTeam() then
 				--DENIED
-				dealLastHit(caster,unit)
+				dealLastHit(caster,target)
 				showCenterMessage("#pudgewars_denied")
 				--TODO
 			    --EMIT SOUND
@@ -314,8 +345,55 @@ local function HookUnit( unit , caster ,plyid )
 	end
 
 
+	local casterOrigin = caster:GetOrigin()
+	local uOrigin = target:GetOrigin()
 	
-	if unit:GetTeam() == caster:GetTeam() then
+	local nFXIndex = ParticleManager:CreateParticle( "necrolyte_scythe", PATTACH_CUSTOMORIGIN, caster )
+	ParticleManager:SetParticleControl(nFXIndex,0,uOrigin)
+	ParticleManager:SetParticleControl(nFXIndex,1,uOrigin)
+	ParticleManager:SetParticleControl(nFXIndex,2,casterOrigin)
+	ParticleManager:ReleaseParticleIndex(nFXIndex)
+	local time = GameRules:GetGameTime()
+	local dummy = CreateUnitByName("npc_dota2x_pudgewars_unit_dummy", 
+		target:GetAbsOrigin(), false, caster, caster, caster:GetTeamNumber())
+	if dummy then print("unit created") end
+	dummy:AddAbility("ability_dota2x_pudgewars_hook_applier")
+	local ABILITY_HOOK_APPLIER = dummy:FindAbilityByName("ability_dota2x_pudgewars_hook_applier")
+	if ABILITY_HOOK_APPLIER then print("ability successful added") end
+	ABILITY_HOOK_APPLIER:SetLevel(1)
+	
+	dummy:CastAbilityOnTarget(target, ABILITY_HOOK_APPLIER, 0 )
+	PudgeWarsGameMode:CreateTimer("damage_dealer_"..tostring(caster)..tostring(GameRules:GetGameTime()),
+	{
+		endTime = Time() + 0.5,
+		callback = function()
+			if target:HasModifier("modifier_pudgewars_hooked") then
+				print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+				print("the unit has the hooked modifier")
+				print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+			end
+			dummy:Destroy()
+		end
+	})
+		
+	local dmg = tnPlayerHookDamage[plyid]
+	print("dmg = "..tostring(dmg).."playerdi"..tostring(plyid))
+	local hp = target:GetHealth()
+	print(" hp = "..tostring(hp))
+	if dmg < hp then
+		-- take away health directly
+		target:SetHealth(hp-dmg)
+	else
+		-- ADD THE ABILITY "ability_deal_the_last_hit" AND DEAL DAMAGE WITH THE SPELL
+		dealLastHit(caster,unit)
+	end
+	
+	--THINK ABOUT HEADSHOT AND DENY
+	
+
+
+	
+	if target:GetTeam() == caster:GetTeam() then
 		tbHookByAlly[unit] = true
 	else
 		tbHookByAlly[unit] = false
@@ -324,131 +402,77 @@ local function HookUnit( unit , caster ,plyid )
 	
 	return 1
 end
-
-function OnHookChanneling(keys)
-
-
+function OnReleaseHook( keys )
 	local caster = EntIndexToHScript(keys.caster_entindex)
-	local casterOrigin = caster:GetOrigin()
-	local casterForwardVector = caster:GetForwardVector()
 	local nPlayerID = caster:GetPlayerID()
-	
 	if not tbPlayerFinishedHook[nPlayerID] then
+	
+		if tHookElements[nPlayerID] == nil then print("hook elements not found returning") return end
 		local uHead = tHookElements[nPlayerID].Head.unit
-		local paHead = tHookElements[nPlayerID].Head.paIndex
+		local headOrigin = uHead:GetOrigin()
+		local paHead = tHookElements[nPlayerID].Head.index
+		local headFV = uHead:GetForwardVector()
+
+		tbPlayerHooking[nPlayerID] = true
+
+		local ABILITY_SETTING_HOOK_DIRECTION = caster:FindAbilityByName("dota2x_pudgewars_release_hook")
+		if caster:HasModifier( "pudgewars_setting_hook" ) then caster:RemoveModifierByName("pudgewars_setting_hook") end
 		
-		-- if the head exists and not coming back then find units round the head
-		if uHead ~= nil 
-			and tHookElements[nPlayerID].Target == nil 
-			and not tbPlayerHookingBack[nPlayerID]
-			then
-			tHookElements[nPlayerID].Target = GetHookedUnit(caster , uHead , nPlayerID )
+		if ABILITY_SETTING_HOOK_DIRECTION then 
+			local ABILITY_HOOK = caster:FindAbilityByName("dota2x_pudgewars_hook")
+			if ABILITY_HOOK then ABILITY_HOOK:SetLevel(1) end
+			caster:RemoveAbility("dota2x_pudgewars_release_hook")
+			caster:AddAbility("dota2x_pudgewars_hook")
 		end
-		
-		-- count the length
-		if tHookElements[nPlayerID].CurrentLength == nil then
-			tHookElements[nPlayerID].CurrentLength = 2
+
+
+		if uHead ~= nil and 
+			tHookElements[nPlayerID].Target == nil and
+			not tbPlayerHookingBack[nPlayerID] then
+
+			if tHookElements[nPlayerID].CurrentLength == nil then 
+				tHookElements[nPlayerID].CurrentLength = 2 
+			else 
+				tHookElements[nPlayerID].CurrentLength = tHookElements[nPlayerID].CurrentLength + 1 
+			end
+
+			if tHookElements[nPlayerID].CurrentLength 
+				* PER_HOOK_BODY_LENGTH 
+					* tnPlayerHookSpeed[nPlayerID] 
+						> tnPlayerHookLength[nPlayerID] 
+			then
+				tbPlayerHookingBack[nPlayerID] = true
+				return 
+			else
+				local vec3 = Vector(
+					 headOrigin.x + headFV.x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
+					,headOrigin.y + headFV.y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
+					,headOrigin.z
+				)
+				uHead:SetOrigin(vec3)
+				local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBDType[ nPlayerID ], PATTACH_CUSTOMORIGIN, caster )
+				tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body + 1] = {
+				    index = nFXIndex,
+				    vec = vec3
+				}
+
+				tvec3 = vec3
+				tvec3.z = vec3.z + 150
+				ParticleManager:SetParticleControl( nFXIndex, 0, tvec3)
+				ParticleManager:SetParticleControl( nFXIndex, 1, tvec3)
+				ParticleManager:SetParticleControl( nFXIndex, 2, tvec3)
+				ParticleManager:SetParticleControl( nFXIndex, 3, tvec3)
+				ParticleManager:SetParticleControl( paHead, 0, tvec3 )
+
+				tHookElements[nPlayerID].Target = GetHookedUnit(caster , uHead , nPlayerID)
+				
+				if tHookElements[nPlayerID].Target then
+					tbPlayerHookingBack[nPlayerID]  = true
+					HookUnit( tHookElements[nPlayerID].Target , caster ,nPlayerID)
+					return
+				end
+			end
 		else
-			tHookElements[nPlayerID].CurrentLength = tHookElements[nPlayerID].CurrentLength + 1
-		end
-		
-		-- if not hook anything and not reach the max length continue to longer the hook
-		if not tHookElements[nPlayerID].Target and 
-			tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] 
-				< tnPlayerHookLength[nPlayerID]
-			then
-
-
-
-			local angleCurrentRad = nil
-			local angleLastRad = nil
-			if casterForwardVector.x == 0 then
-				if casterForwardVector.y > 0 then
-					angleCurrentRad = math.rad(90)
-				elseif casterForwardVector.y < 0 then
-					angleCurrentRad = math.rad(270)
-				end
-			else
-				angleCurrentRad = math.atan(
-					casterForwardVector.y/
-					casterForwardVector.x
-					)
-			end
-			if tPlayerPudgeLastFV[nPlayerID].x == 0 then
-				if tPlayerPudgeLastFV[nPlayerID].y > 0 then
-					angleLastRad = math.rad(90)
-				elseif tPlayerPudgeLastFV[nPlayerID].y < 0 then
-					angleLastRad = math.rad(270)
-				end
-			else
-				angleLastRad = math.atan(
-					tPlayerPudgeLastFV[nPlayerID].y /
-					tPlayerPudgeLastFV[nPlayerID].x
-					)
-			end
-
-
-			local base = uHead:GetOrigin()
-			local baseFV = uHead:GetForwardVector()
-			local baseRad = nil
-			if baseFV.x == 0 then
-				if baseFV.y > 0 then
-					baseRad = math.rad(90)
-				elseif baseFV.y < 0 then
-					baseRad = math.rad(270)
-				end
-			else
-				baseRad = math.atan(
-					baseFV.y/
-					baseFV.x
-					)
-			end
-
-			local resultRad = baseRad + ((angleCurrentRad) - angleLastRad ) / 100
-
-			--currently disable it
-			local vec3 = Vector(
-				 base.x + tPlayerPudgeLastFV[nPlayerID].x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
-				,base.y + tPlayerPudgeLastFV[nPlayerID].y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
-				,base.z
-			)
-
-			uHead:SetOrigin(vec3)
-			uHead:SetForwardVector( Vector(math.cos(resultRad), math.sin(resultRad),0))
-			local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBDType[ nPlayerID ], PATTACH_CUSTOMORIGIN, caster )
-			tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body + 1] = {
-			    index = nFXIndex,
-			    vec = vec3
-			}
-
-			tvec3 = vec3
-			tvec3.z = vec3.z + 150
-			ParticleManager:SetParticleControl( nFXIndex, 0, tvec3)
-			ParticleManager:SetParticleControl( nFXIndex, 1, tvec3)
-			ParticleManager:SetParticleControl( nFXIndex, 2, tvec3)
-			ParticleManager:SetParticleControl( nFXIndex, 3, tvec3)
-			ParticleManager:SetParticleControl( paHead, 0, tvec3 )
-		end
-		
-		-- if hoooked someone then hook it
-		local hooked = nil
-		if tHookElements[nPlayerID].Target then
-			if not tbPlayerHookingBack[nPlayerID] then
-			tbPlayerHookingBack[nPlayerID] = true
-				AppendToLogFile("log/pudgewars.txt","fond a target"..tHookElements[nPlayerID].Target:GetName())
-				local unit = tHookElements[nPlayerID].Target
-				hooked = HookUnit( unit , caster ,nPlayerID)
-				AppendToLogFile("log/pudgewars.txt","hookit? "..tostring(hooked).."?")
-			end
-		end
-
-		--if hooked something or hook reaches the max length then begin to go back
-		if (tHookElements[nPlayerID].Target and hooked ) or  
-			(tHookElements[nPlayerID].CurrentLength * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID] 
-				> tnPlayerHookLength[nPlayerID])
-			then
-
-
 			local backVec = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].vec
 			local paIndex = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].index
 
@@ -462,16 +486,11 @@ function OnHookChanneling(keys)
 			ParticleManager:SetParticleControl( paHead, 0, backVec )
 			tbackVec.z = tbackVec.z - 150
 			uHead:SetOrigin(backVec)
-
-			tbPlayerHookingBack[nPlayerID] = true
-			if tHookElements[nPlayerID].Target then
-				tHookElements[nPlayerID].Target:SetOrigin(Vector(backVec.x,backVec.y,tHookElements[nPlayerID].Target:GetOrigin().z))
+			if tHookElements[nPlayerID].Target then 
+				tHookElements[nPlayerID].Target:SetOrigin(backVec)
 			end
-
-
-
 			table.remove(tHookElements[nPlayerID].Body,#tHookElements[nPlayerID].Body)
-			
+
 			if #tHookElements[nPlayerID].Body == 0 then
 				if tHookElements[nPlayerID].Target ~= nil then
 					if tHookElements[nPlayerID].Target:IsAlive() then
@@ -492,13 +511,13 @@ function OnHookChanneling(keys)
 				tbPlayerFinishedHook[nPlayerID] = true
 			end
 		end
-	end
+	end	
 end
 
 function OnUpgradeHookDamage(keys)
-
-	tPrint(keys)
-	local caster    = keys.Caster
+	print("upgrading damage")
+	PrintTable(keys)
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrage_hook_damage")
@@ -509,15 +528,16 @@ function OnUpgradeHookDamage(keys)
 	-- if the player has not enough gold then stop him from channeling
 	if nUpgradeCost > nCurrentGold then
 		caster:Stop()
-		Say(caster:GetOwner(),"#Upgrading_hook_damage_not_enough_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_damage_not_enough_gold",false)
 	end
 
 end
 
 function OnUpgradeHookRadius( keys )
+	print("upgrading radius")
 
 	PrintTable(keys)
-	local caster = keys.Caster
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 	
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrade_hook_radius")
@@ -528,15 +548,16 @@ function OnUpgradeHookRadius( keys )
 	-- if the player has not enough gold then stop him from channeling
 	if nUpgradeCost > nCurrentGold then
 		caster:Stop()
-		Say(caster:GetOwner(),"#Upgrading_hook_radius_not_enough_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_radius_not_enough_gold",false)
 	end
 
 end
 
 function OnUpgradeHookLength( keys )
+	print("upgrading length")
 
 	PrintTable(keys)
-	local caster = keys.Caster
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrade_hook_length")
@@ -547,15 +568,16 @@ function OnUpgradeHookLength( keys )
 	-- if the player has not enough gold then stop him from channeling
 	if nUpgradeCost > nCurrentGold then
 		caster:Stop()
-		Say(caster:GetOwner(),"#Upgrading_hook_length_not_enough_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_length_not_enough_gold",false)
 	end
 	
 end
 
 function OnUpgradeHookSpeed( keys )
+	print("upgrading speed")
 
 	PrintTable(keys)
-	local caster = keys.Caster
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrade_hook_speed")
@@ -566,7 +588,7 @@ function OnUpgradeHookSpeed( keys )
 	-- if the player has not enough gold then stop him from channeling
 	if nUpgradeCost > nCurrentGold then
 		caster:Stop()
-		Say(caster:GetOwner(),"#Upgrading_hook_speed_not_enough_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_speed_not_enough_gold",false)
 	end
 	
 end
@@ -574,7 +596,7 @@ end
 function OnUpgradeHookDamageFinished( keys )
 
 	PrintTable(keys)
-	local caster = keys.Caster
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrage_hook_damage")
@@ -582,7 +604,7 @@ function OnUpgradeHookDamageFinished( keys )
 	local nUpgradeCost  = tnUpgradeHookDamageCost[nCurrentLevel]
 	
 	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
-		Say(caster:GetOwner(),"#Upgrading_hook_damage_fail_to_spend_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_damage_fail_to_spend_gold",false)
 	else
 		-- upgrade the hook data and spend gold
 		hHookAbility:SetLevel( nCurrentLevel + 1 )
@@ -594,18 +616,16 @@ end
 function OnUpgradeHookRadiusFinished( keys )
 
 	PrintTable(keys)
-	local caster = keys.Caster
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 
-	local caster = keys.Caster
-	local nPlayerID = caster:GetPlayerID()
 	local nUpgradeCost  = tnUpgradeHookRadiusCost[nCurrentLevel]
 
 	local hHookAbility  = caster:FindAbilityByName("dota2x_pudgewars_upgrade_hook_radius")
 	local nCurrentLevel = hHookAbility:GetLevel()
 	
 	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
-		Say(caster:GetOwner(),"#Upgrading_hook_radius_fail_to_spend_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_radius_fail_to_spend_gold",false)
 	else
 		-- upgrade the hook data and spend gold
 		hHookAbility:SetLevel( nCurrentLevel + 1 )
@@ -618,10 +638,7 @@ end
 function OnUpgradeHookLengthFinished( keys )
 
 	PrintTable(keys)
-	local caster = keys.Caster
-	local nPlayerID = caster:GetPlayerID()
-
-	local caster = keys.Caster
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 	local nUpgradeCost  = tnUpgradeLengthCost[nCurrentLevel]
 
@@ -629,7 +646,7 @@ function OnUpgradeHookLengthFinished( keys )
 	local nCurrentLevel = hHookAbility:GetLevel()
 	
 	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
-		Say(caster:GetOwner(),"#Upgrading_hook_length_fail_to_spend_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_length_fail_to_spend_gold",false)
 	else
 		-- upgrade the hook data and spend gold
 		hHookAbility:SetLevel( nCurrentLevel + 1 )
@@ -642,10 +659,7 @@ end
 function OnUpgradeHookSpeedFinished( keys )
 
 	PrintTable(keys)
-	local caster = keys.Caster
-	local nPlayerID = caster:GetPlayerID()
-
-	local caster = keys.Caster
+	local caster    = EntIndexToHScript(keys.caster_entindex)
 	local nPlayerID = caster:GetPlayerID()
 	local nUpgradeCost  = tnUpgradeHookSpeedCost[nCurrentLevel]
 
@@ -654,7 +668,7 @@ function OnUpgradeHookSpeedFinished( keys )
 	
 
 	if nUpgradeCost > PlayerResource:GetGold(nPlayerID) then
-		Say(caster:GetOwner(),"#Upgrading_hook_speed_fail_to_spend_gold",caster:GetTeam())
+		Say(caster:GetOwner(),"#Upgrading_hook_speed_fail_to_spend_gold",false)
 	else
 		-- upgrade the hook data and spend gold
 		hHookAbility:SetLevel( nCurrentLevel + 1 )
@@ -664,10 +678,18 @@ function OnUpgradeHookSpeedFinished( keys )
 	
 end
 
-
-function OnFinishHeadSpawn( keys )
-	PrintTable(keys)
-
-	local point = keys.target.__self:GetOrigin()
-	print(point)
+function OnToggleHookType( keys )
+	local caster = EntIndexToHScript(keys.caster_entindex)
+	local nPlayerID = caster:GetPlayerID()
+	if tbPlayerOutterHook[nPlayerID] then
+		print("change from on to off")
+		local ABILITY_OUTTER_HOOK = caster:FindAbilityByName("dota2x_pudgewars_toggle_hook")
+		ABILITY_OUTTER_HOOK:__KeyValueFromString("AbilityTextureName","pudgewars_toggle_outter_hook_off")
+		tbPlayerOutterHook[nPlayerID] = false
+	else
+		print("change from of to on")
+		local ABILITY_OUTTER_HOOK = caster:FindAbilityByName("dota2x_pudgewars_toggle_hook")
+		ABILITY_OUTTER_HOOK:__KeyValueFromString("AbilityTextureName","pudgewars_toggle_outter_hook_on")
+		tbPlayerOutterHook[nPlayerID] = true
+	end
 end
