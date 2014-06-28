@@ -50,6 +50,7 @@
             "ScriptFile"        "scripts/vscripts/abilityhook.lua"
             "Function"          "OnHookChanneling"
             "Caster"            "CASTER"
+            "Target"            "POINT"
           }
         }
       }
@@ -124,7 +125,7 @@
       "ID"      "1860"
       "AbilityBehavior"   "DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_TURN | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
       "BaseClass"           "ability_datadriven"
-      
+
       "OnSpellStart"
       {
         "Damage"

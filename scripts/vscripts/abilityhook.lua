@@ -1,62 +1,99 @@
-tbHookByAlly = {}
-
-tbPlayerFinishedHook = {}
-tbPlayerHookingBack = {}
-
-tHookElements = tHookElements or {}
 
 WORLDMAX_VEC = Vector(GetWorldMaxX(),GetWorldMaxY(),0)
 
-tnHookDamage = {175 , 250 , 350 , 500  }
-tnHookLength = {500 , 700 , 900 , 1200 }
-tnHookRadius = {20  , 30  , 50  , 80   }
-tnHookSpeed  = {0.2 , 0.3 , 0.4 , 0.6  }
-
-tnUpgradeHookDamageCost = {500 , 1000 , 1500 , 2000  }
-tnUpgradeHookLengthCost = {500 , 1000 , 1500 , 2000  }
-tnUpgradeHookRadiusCost = {500 , 1000 , 1500 , 2000  }
-tnUpgradeHookSpeedCost  = {500 , 1000 , 1500 , 2000  }
-
-tnPlayerHookDamage  = {}
-tnPlayerHookLength  = {}
-tnPlayerHookRadius  = {}
-tnPlayerHookSpeed   = {}
-tnPlayerHookType    = {}
-tnPlayerHookBDType = {}
-tPlayerPudgeLastFV  = {}
-tnPlayerHookType    = {}
 
 
-tnPlayerKillStreak  = {}
+function initHookData()
+	tbHookByAlly = {}
 
+	tbPlayerFinishedHook = {}
+	tbPlayerHookingBack = {}
 
-PER_HOOK_BODY_LENGTH = 50
+	tHookElements = tHookElements or {}
+	tnHookDamage = {175 , 250 , 350 , 500  }
+	tnHookLength = {500 , 700 , 900 , 1200 }
+	tnHookRadius = {20  , 30  , 50  , 80   }
+	tnHookSpeed  = {0.2 , 0.3 , 0.4 , 0.6  }
 
-tnHookTypeString = {
-	[1] = "npc_dota2x_pudgewars_unit_pudgehook_lv1",	-- normal hook
-	[2] = "npc_dota2x_pudgewars_unit_pudgehook_lv2",	-- black death hook
-	[3] = "npc_dota2x_pudgewars_unit_pudgehook_lv3",	-- whale hook
-	[4] = "npc_dota2x_pudgewars_unit_pudgehook_lv4"		-- skelton hook
-}
+	tnUpgradeHookDamageCost = {500 , 1000 , 1500 , 2000  }
+	tnUpgradeHookLengthCost = {500 , 1000 , 1500 , 2000  }
+	tnUpgradeHookRadiusCost = {500 , 1000 , 1500 , 2000  }
+	tnUpgradeHookSpeedCost  = {500 , 1000 , 1500 , 2000  }
 
-tnHookParticleString = {
-	 --TODO FIND THE PARTICLES
-	 [1] = "invoker_quas_orb"
-	,[2] = "invoker_wex_orb"
-	,[3] = "invoker_exort_orb"
-}
+	tnPlayerHookDamage  = {}
+	tnPlayerHookLength  = {}
+	tnPlayerHookRadius  = {}
+	tnPlayerHookSpeed   = {}
+	tnPlayerHookType    = {}
+	tnPlayerHookBDType = {}
+	tPlayerPudgeLastFV  = {}
+	tnPlayerHookType    = {}
+	tnPlayerKillStreak  = {}
 
-tPossibleHookTargetName = {
-	 "npc_dota2x_pudgewars_pudge"
-	,"npc_dota2x_pudgewars_chest"
-	,"npc_dota2x_pudgewars_gold"
-	--TODO
-	-- for test only
-	,"npc_dota2x_pudgewars_unit_test"
-	,"dota_goodguys_tower1_top"
-	--,"npc_dota2x_pudgewars_rune" TODO
+	PER_HOOK_BODY_LENGTH = 50
 
-}
+	tnHookTypeString = {
+		[1] = "npc_dota2x_pudgewars_unit_pudgehook_lv1",	-- normal hook
+		[2] = "npc_dota2x_pudgewars_unit_pudgehook_lv2",	-- black death hook
+		[3] = "npc_dota2x_pudgewars_unit_pudgehook_lv3",	-- whale hook
+		[4] = "npc_dota2x_pudgewars_unit_pudgehook_lv4"		-- skelton hook
+	}
+
+	tnHookParticleString = {
+		 --TODO FIND THE PARTICLES
+		 [1] = "invoker_quas_orb"
+		,[2] = "invoker_wex_orb"
+		,[3] = "invoker_exort_orb"
+	}
+
+	tPossibleHookTargetName = {
+		 "npc_dota2x_pudgewars_pudge"
+		,"npc_dota2x_pudgewars_chest"
+		,"npc_dota2x_pudgewars_gold"
+		--TODO
+		-- for test only
+		,"npc_dota2x_pudgewars_unit_test"
+		,"npc_dota_goodguys_tower1_top"
+		--,"npc_dota2x_pudgewars_rune" TODO
+
+	}
+	for i = 0,9 do
+		tHookElements[i] = {
+			Head = {
+				unit = nil,
+				paIndex = nil
+			},
+			Target = nil,
+			CurrentLength = nil,
+			Body = {}
+		}
+		tnPlayerHookType[i] = tnHookTypeString[1]
+		tnPlayerHookBDType[i] = tnHookParticleString[1]
+		tnPlayerHookRadius[i] = 100
+		tnPlayerHookLength[i] = 1300
+		tnPlayerHookSpeed[i] = 0.2
+		tnPlayerHookDamage[i] = 200
+
+	end
+	PudgeWarsGameMode:CreateTimer("Create_Test_units",{
+		endTime = Time(),
+		callback = function ()
+			print("spawning test units")
+			local testUnitTable = {
+				 "npc_dota_goodguys_melee_rax_bot"
+				,"npc_dota_neutral_blue_dragonspawn_overseer"
+				,"npc_dota_necronomicon_warrior_2"
+				,"npc_dota_warlock_golem_3"
+			}
+			for k,v in pairs(testUnitTable) do
+				table.insert( tPossibleHookTargetName , #tPossibleHookTargetName + 1 ,v)
+				CreateUnitByName(v,Vector(0,0,0) + RandomVector(1000),false,nil,nil,DOTA_TEAM_GOODGUYS)
+			end
+			PrintTable(tPossibleHookTargetName)
+		end
+	})
+	print("[pudgewars] finish init hook data")
+end
 
 local function distance(a, b)
     -- Pythagorian distance
@@ -65,27 +102,6 @@ local function distance(a, b)
 
     return math.sqrt(xx*xx + yy*yy)
 end
-
-for i = 0,9 do
-	tHookElements[i] = {
-		Head = {
-			unit = nil,
-			paIndex = nil
-		},
-		Target = nil,
-		CurrentLength = nil,
-		Body = {}
-	}
-	tnPlayerHookType[i] = tnHookTypeString[1]
-	tnPlayerHookBDType[i] = tnHookParticleString[1]
-	tnPlayerHookRadius[i] = 70
-	tnPlayerHookLength[i] = 1200
-	tnPlayerHookSpeed[i] = 0.2
-	tnPlayerHookDamage[i] = 175
-
-end
-
-print("[pudgewars] finish init hook data")
 
 
 
@@ -104,11 +120,24 @@ function OnHookStart(keys)
 	tbPlayerHookingBack[nPlayerID] = false
 
 	print("player "..tostring(nPlayerID).." Start a hook")
-	
+	PrintTable(keys)
+	print("-------------------------------------------------")
+	PrintTable(keys.caster.__self)
+	print("-------------------------------------------------")
+	PrintTable(keys.ability.__self)
+	print("-------------------------------------------------")
+	PrintTable(keys.attacker.__self)
 	-- create the hook head
 	local casterOrigin = caster:GetOrigin()
 	casterOrigin.z = casterOrigin.z - 30
-	local unit = CreateUnitByName("npc_dota2x_pudgewars_unit_pudgehook_lv1",casterOrigin,false,nil,nil,caster:GetTeam())
+	local unit = CreateUnitByName(
+		"npc_dota2x_pudgewars_unit_pudgehook_lv1"
+		,casterOrigin
+		,false
+		,nil
+		,nil
+		,caster:GetTeam()
+		)
 	
 	if unit == nil then 
 		print("fail to create the head")
@@ -169,14 +198,15 @@ local function GetHookedUnit(caster, head , plyid)
 					va = true
 				end
 			end
-			if not va then
+			if ( not va ) or ( v == caster ) then
 				-- not a valid unit , remove
+				print("remove")
 				table.remove(tuHookedUnits , k)
 			end
 		end
 	end
 	
-	if #tuHookedUnits >= 1  and tuHookedUnits[1] ~= caster then
+	if #tuHookedUnits >= 1 then
 		-- return the nearest unit
 		return tuHookedUnits[1]
 	end
@@ -185,15 +215,18 @@ end
 
 local function dealLastHit( caster,target )
 	caster:AddAbility("ability_deal_the_last_hit")
-		local ABILITY_LAST_HIT = caster:FindAbilityByName("ability_deal_the_last_hit")
-		ABILITY_LAST_HIT:SetLevel(1)
-		ExecuteOrderFromTable({
-			UnitIndex = caster:entindex(),
-			OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
-			AbilityIndex = ABILITY_LAST_HIT:entindex(),
-			TargetIndex = target:entindex()
-		})
-		caster:RemoveAbility("ability_deal_the_last_hit")
+	local ABILITY_LAST_HIT = caster:FindAbilityByName("ability_deal_the_last_hit")
+	ABILITY_LAST_HIT:SetLevel(1)
+	ExecuteOrderFromTable({
+		UnitIndex = caster:entindex(),
+		OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
+		AbilityIndex = ABILITY_LAST_HIT:entindex(),
+		TargetIndex = target:entindex()
+	})
+	caster:RemoveAbility("ability_deal_the_last_hit")
+	if target:IsAlive() then
+		target:ForceKill(false)
+	end
 end
 
 local function HookUnit( unit , caster ,plyid )
@@ -362,9 +395,10 @@ function OnHookChanneling(keys)
 
 			local resultRad = baseRad + ((angleCurrentRad) - angleLastRad ) / 100
 
+			--currently disable it
 			local vec3 = Vector(
-				 base.x + math.cos(resultRad) * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
-				,base.y + math.sin(resultRad) * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
+				 base.x + baseFV.x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
+				,base.y + baseFV.y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
 				,base.z
 			)
 
@@ -430,7 +464,9 @@ function OnHookChanneling(keys)
 			if #tHookElements[nPlayerID].Body == 0 then
 				if tHookElements[nPlayerID].Target ~= nil then
 					if tHookElements[nPlayerID].Target:IsAlive() then
+						tHookElements[nPlayerID].Target:AddNewModifier(tHookElements[nPlayerID].Target,nil,"modifier_phased",{})
 						tHookElements[nPlayerID].Target:RemoveModifierByName( "dota2x_modifier_hooked" )
+						tHookElements[nPlayerID].Target:RemoveModifierByName("modifier_phased")
 					end
 				end
 				

@@ -83,7 +83,7 @@ function PudgeWarsGameMode:InitGameMode()
     self.eGoldSpawner  = Entities:FindByName(nil,"dota_pudgewar_gold_spawner" )
     self.eChestSpawner = Entities:FindByName(nil,"dota_pudgewar_chest_spawner")
 
-
+    initHookData()
     self.t0 = 0
     PrecacheUnitByName('npc_precache_everything')
     print('[PudgeWars] Done loading PudgeWars gamemode!\n\n')
@@ -176,7 +176,7 @@ function PudgeWarsGameMode:Think()
         PudgeWarsGameMode.t0 = now
     end
     local dt = now - PudgeWarsGameMode.t0
-    t0 = now
+    PudgeWarsGameMode.t0 = now
 
     for k,v in pairs(PudgeWarsGameMode.timers) do
         local bUseGameTime = TIMER_USE_GAME_TIME
