@@ -86,7 +86,6 @@
   "ability_dota2x_pudgewars_hook_applier"
   {
       "ID"      "1859"
-      "ID"    "1853"
       "AbilityBehavior"   "DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_TURN | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
       "BaseClass"           "ability_datadriven"
 
@@ -123,7 +122,9 @@
   "ability_deal_the_last_hit"
   {
       "ID"      "1860"
-
+      "AbilityBehavior"   "DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_TURN | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
+      "BaseClass"           "ability_datadriven"
+      
       "OnSpellStart"
       {
         "Damage"

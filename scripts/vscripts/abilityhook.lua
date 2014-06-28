@@ -77,10 +77,11 @@ for i = 0,9 do
 		Body = {}
 	}
 	tnPlayerHookType[i] = tnHookTypeString[1]
-	tnPlayerHookBDType[i] = tnHookParticleString[3]
-	tnPlayerHookRadius[i] = 50
+	tnPlayerHookBDType[i] = tnHookParticleString[1]
+	tnPlayerHookRadius[i] = 70
 	tnPlayerHookLength[i] = 1200
 	tnPlayerHookSpeed[i] = 0.2
+	tnPlayerHookDamage[i] = 175
 
 end
 
@@ -116,33 +117,32 @@ function OnHookStart(keys)
 		unit:SetForwardVector(vForwardVector)
 	end
 
-	casterOrigin.x= casterOrigin.x + 300
-	local unit = CreateUnitByName("npc_dota2x_pudgewars_unit_test",Vector(vOrigin.x + 200 ,vOrigin.y,vOrigin.z),false,nil,nil,caster:GetTeam())
-	
-	-- TODO replace "veil of discord" with correct particle， or even a table of effect 
-	-- defined by units killed by the caster
-	
-	--local nFXIndex = ParticleManager:CreateParticle( "veil_of_discord", PATTACH_CUSTOMORIGIN, caster )
-	
 	local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBDType[ nPlayerID ] , PATTACH_CUSTOMORIGIN, caster )
-	vOrigin.z = vOrigin.z + 100
+	vOrigin.z = vOrigin.z + 150
 	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin )
 	ParticleManager:SetParticleControl( nFXIndex, 1, vOrigin )
 	ParticleManager:SetParticleControl( nFXIndex, 2, vOrigin )
 	ParticleManager:SetParticleControl( nFXIndex, 3, vOrigin )
 	AppendToLogFile("log/pudgewars.txt","Particle Index 1"..tostring(nFXIndex).."\n")
 	
-	nFXIndex = ParticleManager:CreateParticle( "the_quas_trail" , PATTACH_CUSTOMORIGIN, caster )
-	vOrigin.z = vOrigin.z + 150
-	ParticleManager:SetParticleControl( nFXIndex, 0, vOrigin )
-	AppendToLogFile("log/pudgewars.txt","Particle Index 2"..tostring(nFXIndex).."\n")
-	tHookElements[nPlayerID].Head.paIndex = nFXIndex
+	tnFXIndex = ParticleManager:CreateParticle( "the_quas_trail" , PATTACH_CUSTOMORIGIN, caster )
+	ParticleManager:SetParticleControl( tnFXIndex, 0, vOrigin )
+	AppendToLogFile("log/pudgewars.txt","Particle Index 2"..tostring(tnFXIndex).."\n")
+	tHookElements[nPlayerID].Head.paIndex = tnFXIndex
+	
 	tHookElements[nPlayerID].Body[1] = {
 	    index = nFXIndex,
 	    vec = vOrigin
 	}
 end
-
+local function showCenterMessage( msg )
+	local m = {
+		message= msg,
+		duration = 2
+	}
+	PudgewarsGameMode:FireGameEvent("show_center_message",m)
+	-- body
+end
 -- get the hooked unit
 local function GetHookedUnit(caster, head , plyid)
 		
@@ -157,12 +157,14 @@ local function GetHookedUnit(caster, head , plyid)
 		0, FIND_CLOSEST,
 		false
 	)
+
 	if #tuHookedUnits >= 1 then
 		for k,v in pairs(tuHookedUnits) do
-			print("unit" .. tostring(k)..":"..v:GetName())
+			print("unitunitname " .. tostring(k)..":"..v:GetUnitName())
+
 			local va = false
 			for s,t in pairs (tPossibleHookTargetName) do
-				if v:GetName() == t then
+				if v:GetUnitName() == t then
 					-- the unit in the table , a valid hook unit
 					va = true
 				end
@@ -181,7 +183,20 @@ local function GetHookedUnit(caster, head , plyid)
 	return nil
 end
 
-local function HookUnit( unit , caster )
+local function dealLastHit( caster,target )
+	caster:AddAbility("ability_deal_the_last_hit")
+		local ABILITY_LAST_HIT = caster:FindAbilityByName("ability_deal_the_last_hit")
+		ABILITY_LAST_HIT:SetLevel(1)
+		ExecuteOrderFromTable({
+			UnitIndex = caster:entindex(),
+			OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
+			AbilityIndex = ABILITY_LAST_HIT:entindex(),
+			TargetIndex = target:entindex()
+		})
+		caster:RemoveAbility("ability_deal_the_last_hit")
+end
+
+local function HookUnit( unit , caster ,plyid )
 	print ( "hooked something" )
 	print ( "the enemy name "..unit:GetName())
 
@@ -211,35 +226,43 @@ local function HookUnit( unit , caster )
 	end
 	
 	local dmg = tnPlayerHookDamage[plyid]
+	print("dmg = "..tostring(dmg).."playerdi"..tostring(plyid))
 	local hp = unit:GetHealth()
-	if dmg > hp then
+	print(" hp = "..tostring(hp))
+	if dmg < hp then
 		-- take away health directly
 		unit:SetHealth(hp-dmg)
 	else
 		-- ADD THE ABILITY "ability_deal_the_last_hit" AND DEAL DAMAGE WITH THE SPELL
-		caster:AddAbility("ability_deal_the_last_hit")
-		local ABILITY_LAST_HIT = caster:FindAbilityByName("ability_deal_the_last_hit")
-		ABILITY_LAST_HIT:SetLevel(1)
-		ExecuteOrderFromTable({
-			UnitIndex = caster:entindex(),
-			OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
-			AbilityIndex = ABILITY_LAST_HIT:entindex(),
-			TargetIndex = unit:entindex()
-		})
-		caster:RemoveAbility("ability_deal_the_last_hit")
+		dealLastHit(caster,unit)
 	end
 	
 	--THINK ABOUT HEADSHOT AND DENY
 	if unit:HasModifier("dota2x_modifier_hooked") then
+		if unit:GetTeam() ~= caster:GetTeam() then
+			--HEAD SHOT
+			dealLastHit(caster,unit)
+			showCenterMessage("#pudgewars_head_shot")
+			--TODO
+			--EMIT SOUND
+		end
 		if tbHookByAlly[unit] then
 			print("the unit has been hooked by ally")
 			if unit:GetTeam() ~= caster:GetTeam() then
 				--HEADSHOT
+				dealLastHit(caster,unit)
+				showCenterMessage("#pudgewars_head_shot")
+				--TODO
+				--EMIT SOUND
 			end
 		else
 			print("the unit has been hooked by enemy")
 			if unit:GetTeam() == caster:GetTeam() then
 				--DENIED
+				dealLastHit(caster,unit)
+				showCenterMessage("#pudgewars_denied")
+				--TODO
+			    --EMIT SOUND
 			end
 		end
 	end
@@ -290,9 +313,7 @@ function OnHookChanneling(keys)
 			then
 
 			
-			if tPlayerPudgeLastFV[nPlayerID] == nil then
-				tPlayerPudgeLastFV[nPlayerID] = casterForwardVector
-			end
+			tPlayerPudgeLastFV[nPlayerID] = tPlayerPudgeLastFV[nPlayerID] or casterForwardVector
 
 
 			local angleCurrentRad = nil
@@ -339,7 +360,7 @@ function OnHookChanneling(keys)
 					)
 			end
 
-			local resultRad = baseRad + ((angleCurrentRad) - angleLastRad ) / 10
+			local resultRad = baseRad + ((angleCurrentRad) - angleLastRad ) / 100
 
 			local vec3 = Vector(
 				 base.x + math.cos(resultRad) * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
@@ -349,37 +370,31 @@ function OnHookChanneling(keys)
 
 			uHead:SetOrigin(vec3)
 			uHead:SetForwardVector( Vector(math.cos(resultRad), math.sin(resultRad),0))
-
 			local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBDType[ nPlayerID ], PATTACH_CUSTOMORIGIN, caster )
-			
 			tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body + 1] = {
 			    index = nFXIndex,
 			    vec = vec3
 			}
 
-
-			vec3.z = vec3.z + 100
-			ParticleManager:SetParticleControl( nFXIndex, 0, vec3)
-			ParticleManager:SetParticleControl( nFXIndex, 1, vec3)
-			ParticleManager:SetParticleControl( nFXIndex, 2, vec3)
-			ParticleManager:SetParticleControl( nFXIndex, 3, vec3)
-
-			vec3.z = vec3.z + 100
-			ParticleManager:SetParticleControl( paHead, 0, vec3 )
-
-			
-			--TRYING TO MAKE THE HOOK TURN BASED ON THE PLAYER CURRENT  FORWARD - HOOK START FORWARD
-			--tPlayerPudgeLastFV[nPlayerID] = casterForwardVector
+			tvec3 = vec3
+			tvec3.z = vec3.z + 150
+			ParticleManager:SetParticleControl( nFXIndex, 0, tvec3)
+			ParticleManager:SetParticleControl( nFXIndex, 1, tvec3)
+			ParticleManager:SetParticleControl( nFXIndex, 2, tvec3)
+			ParticleManager:SetParticleControl( nFXIndex, 3, tvec3)
+			ParticleManager:SetParticleControl( paHead, 0, tvec3 )
 		end
 		
 		-- if hoooked someone then hook it
 		local hooked = nil
 		if tHookElements[nPlayerID].Target then
-			AppendToLogFile("log/pudgewars.txt","fond a target"..tHookElements[nPlayerID].Target:GetName())
-			local unit = tHookElements[nPlayerID].Target
-			hooked = HookUnit( unit , caster )
-			AppendToLogFile("log/pudgewars.txt",tostring(hooked))
-
+			if not tbPlayerHookingBack[nPlayerID] then
+			tbPlayerHookingBack[nPlayerID] = true
+				AppendToLogFile("log/pudgewars.txt","fond a target"..tHookElements[nPlayerID].Target:GetName())
+				local unit = tHookElements[nPlayerID].Target
+				hooked = HookUnit( unit , caster ,nPlayerID)
+				AppendToLogFile("log/pudgewars.txt","hookit? "..tostring(hooked).."?")
+			end
 		end
 
 		--if hooked something or hook reaches the max length then begin to go back
@@ -388,7 +403,6 @@ function OnHookChanneling(keys)
 				> tnPlayerHookLength[nPlayerID])
 			then
 
-			tbPlayerHookingBack[nPlayerID] = true
 
 			local backVec = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].vec
 			local paIndex = tHookElements[nPlayerID].Body[#tHookElements[nPlayerID].Body].index
@@ -399,14 +413,16 @@ function OnHookChanneling(keys)
 			ParticleManager:SetParticleControl( paIndex, 3, WORLDMAX_VEC)
 			ParticleManager:ReleaseParticleIndex( paIndex )
 
+			tbackVec = backVec
+			ParticleManager:SetParticleControl( paHead, 0, backVec )
+			tbackVec.z = tbackVec.z - 150
 			uHead:SetOrigin(backVec)
-			
+
+			tbPlayerHookingBack[nPlayerID] = true
 			if tHookElements[nPlayerID].Target then
 				tHookElements[nPlayerID].Target:SetOrigin(Vector(backVec.x,backVec.y,tHookElements[nPlayerID].Target:GetOrigin().z))
 			end
 
-			backVec.z = backVec.z + 150
-			ParticleManager:SetParticleControl( paHead, 0, backVec )
 
 
 			table.remove(tHookElements[nPlayerID].Body,#tHookElements[nPlayerID].Body)

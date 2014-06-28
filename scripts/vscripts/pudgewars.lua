@@ -266,9 +266,9 @@ function PudgeWarsGameMode:AutoAssignPlayer(keys)
             local heroEntity = ply:GetAssignedHero()
             if PlayerResource:IsFakeClient(playerID) then
                 if heroEntity == nil then
-                    CreateHeroForPlayer('npc_dota2x_pudgewars_pudge', ply)
+                    CreateHeroForPlayer('npc_dota_hero_pudge', ply)
                 else
-                    PlayerResource:ReplaceHeroWith(playerID, 'npc_dota2x_pudgewars_pudge', STARTING_GOLD , 0)
+                    PlayerResource:ReplaceHeroWith(playerID, 'npc_dota_hero_pudge', STARTING_GOLD , 0)
                 end
             end
             heroEntity = ply:GetAssignedHero()
