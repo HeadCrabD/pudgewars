@@ -110,6 +110,8 @@
       {
         "modifier_pudgewars_hooked"
         {
+          "IsHidden"    "0"
+          "IsPassive"   "1"
           "States"
           {
             "MODIFIER_STATE_DISARMED"   "MODIFIER_STATE_VALUE_ENABLED"

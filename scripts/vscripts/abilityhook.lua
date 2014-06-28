@@ -47,13 +47,9 @@ function initHookData()
 	}
 
 	tPossibleHookTargetName = {
-		 "npc_dota2x_pudgewars_pudge"
+		 "npc_dota_hero_pudge"
 		,"npc_dota2x_pudgewars_chest"
 		,"npc_dota2x_pudgewars_gold"
-		--TODO
-		-- for test only
-		,"npc_dota2x_pudgewars_unit_test"
-		,"npc_dota_goodguys_tower1_top"
 		--,"npc_dota2x_pudgewars_rune" TODO
 
 	}
@@ -71,25 +67,40 @@ function initHookData()
 		tnPlayerHookBDType[i] = tnHookParticleString[1]
 		tnPlayerHookRadius[i] = 100
 		tnPlayerHookLength[i] = 1300
-		tnPlayerHookSpeed[i] = 0.2
+		tnPlayerHookSpeed[i] = 0.4
 		tnPlayerHookDamage[i] = 200
 
 	end
 	PudgeWarsGameMode:CreateTimer("Create_Test_units",{
 		endTime = Time(),
 		callback = function ()
-			print("spawning test units")
-			local testUnitTable = {
-				 "npc_dota_goodguys_melee_rax_bot"
-				,"npc_dota_neutral_blue_dragonspawn_overseer"
-				,"npc_dota_necronomicon_warrior_2"
-				,"npc_dota_warlock_golem_3"
-			}
-			for k,v in pairs(testUnitTable) do
-				table.insert( tPossibleHookTargetName , #tPossibleHookTargetName + 1 ,v)
-				CreateUnitByName(v,Vector(0,0,0) + RandomVector(1000),false,nil,nil,DOTA_TEAM_GOODGUYS)
+			if developmentmode then
+				print("spawning test units")
+				local testUnitTable = {
+					 "npc_dota_goodguys_melee_rax_bot"
+					,"npc_dota_neutral_blue_dragonspawn_overseer"
+					,"npc_dota_necronomicon_warrior_2"
+					,"npc_dota_warlock_golem_3"
+				}
+				for k,v in pairs(testUnitTable) do
+					table.insert( tPossibleHookTargetName , #tPossibleHookTargetName + 1 ,v)
+					--ability_dota2x_pudgewars_hook_applier
+					
+					local caster = CreateUnitByName(v,Vector(0,0,0) + RandomVector(1000),false,nil,nil,DOTA_TEAM_GOODGUYS)
+					
+					caster:AddAbility("ability_dota2x_pudgewars_hook_applier")
+					local ABILITY_HOOK_APPLIER = caster:FindAbilityByName("ability_dota2x_pudgewars_hook_applier")
+					ABILITY_HOOK_APPLIER:SetLevel(1)
+					ExecuteOrderFromTable({
+							UnitIndex = caster:entindex(),
+							OrderType = DOTA_UNIT_ORDER_CAST_TARGET,
+							AbilityIndex = ABILITY_HOOK_APPLIER:entindex(),
+							TargetIndex = caster:entindex()
+					})
+					
+				end
+				PrintTable(tPossibleHookTargetName)
 			end
-			PrintTable(tPossibleHookTargetName)
 		end
 	})
 	print("[pudgewars] finish init hook data")
@@ -145,6 +156,8 @@ function OnHookStart(keys)
 		tHookElements[nPlayerID].Head.unit = unit
 		unit:SetForwardVector(vForwardVector)
 	end
+
+	tPlayerPudgeLastFV[nPlayerID] = vForwardVector
 
 	local nFXIndex = ParticleManager:CreateParticle( tnPlayerHookBDType[ nPlayerID ] , PATTACH_CUSTOMORIGIN, caster )
 	vOrigin.z = vOrigin.z + 150
@@ -272,8 +285,10 @@ local function HookUnit( unit , caster ,plyid )
 	
 	--THINK ABOUT HEADSHOT AND DENY
 	if unit:HasModifier("dota2x_modifier_hooked") then
+		print("unit has modifier")
 		if unit:GetTeam() ~= caster:GetTeam() then
 			--HEAD SHOT
+			print("unit has modifier")
 			dealLastHit(caster,unit)
 			showCenterMessage("#pudgewars_head_shot")
 			--TODO
@@ -345,8 +360,6 @@ function OnHookChanneling(keys)
 				< tnPlayerHookLength[nPlayerID]
 			then
 
-			
-			tPlayerPudgeLastFV[nPlayerID] = tPlayerPudgeLastFV[nPlayerID] or casterForwardVector
 
 
 			local angleCurrentRad = nil
@@ -397,8 +410,8 @@ function OnHookChanneling(keys)
 
 			--currently disable it
 			local vec3 = Vector(
-				 base.x + baseFV.x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
-				,base.y + baseFV.y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
+				 base.x + tPlayerPudgeLastFV[nPlayerID].x * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
+				,base.y + tPlayerPudgeLastFV[nPlayerID].y * PER_HOOK_BODY_LENGTH * tnPlayerHookSpeed[nPlayerID]
 				,base.z
 			)
 
@@ -465,8 +478,8 @@ function OnHookChanneling(keys)
 				if tHookElements[nPlayerID].Target ~= nil then
 					if tHookElements[nPlayerID].Target:IsAlive() then
 						tHookElements[nPlayerID].Target:AddNewModifier(tHookElements[nPlayerID].Target,nil,"modifier_phased",{})
-						tHookElements[nPlayerID].Target:RemoveModifierByName( "dota2x_modifier_hooked" )
 						tHookElements[nPlayerID].Target:RemoveModifierByName("modifier_phased")
+						tHookElements[nPlayerID].Target:RemoveModifierByName( "dota2x_modifier_hooked" )
 					end
 				end
 				
